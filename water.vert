@@ -20,10 +20,9 @@ uniform float LightX;
 uniform float LightY;
 uniform float LightZ;
 
-// octaves to use
 uniform int uOctaves;
 
-uniform bool uFluidLandEnabled;
+uniform float uWaterHeight;
 
 // approximate eye light position
 vec3 eyeLightPosition = vec3(LightX,LightY,LightZ);
@@ -47,7 +46,9 @@ float hash(vec2 co) {
 		// then returns the fractional component of that number, focusing further on the error
 		// overall, this is a dubious hash function because sin() is platform specific, and may not be consistent
     return fract(u);
+
 }
+
 
 // 1D noise function
 // Based on Morgan McGuire @morgan3d
@@ -130,15 +131,16 @@ void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
 // calculates the surface normal that should be used
 vec3 calcNormal(vec3 p1, float modifier) {
 	// calculate 2 other points slightly farther along s and t
+  p1.y = 1.0;
 	vec3 p2 = p1;
 	vec3 p3 = p1;
 
 	// slightly shift p2's x up and calc new y
 	p2.x += 0.0001;
-	p2.y = fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)));
+  p2.y += fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSlowTime + uSeed))) * 0.05;
 	// slightly shift p3's z up and calc new y
 	p3.z += 0.0001;
-	p3.y = fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSeed)));
+  p3.y += fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSlowTime + uSeed))) * 0.05;
 
 	// calculate cross of vector(p1,p2) and vector(p1,p3)
 	vec3 v1 = p1 - p2;
@@ -159,16 +161,24 @@ void main() {
 	vec3 vert = gl_Vertex.xyz;
 
 	// pull aside S and T for noise
-	vec3 adjustedNormal;
-	if(!uFluidLandEnabled) {
-		vert.y = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSeed)));
-		adjustedNormal = calcNormal(vert, uSeed);
-	} else {
-		vert.y = fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + uSeed)));
-		adjustedNormal = gl_Normal;
-		//adjustedNormal = calcNormal(vert, uSeed);
+  // f(p) = fbm( p + fbm( p + fbm( p ) ) )
+  float ff = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSlowTime + uSeed))) * 0.05;
+  vert.y = ff + uWaterHeight;
 
-	}
+  vert.y += 0.43;
+
+	//vec3 adjustedNormal = calcNormal(vert, uSlowTime);
+  vec3 adjustedNormal = gl_Normal;
+
+  // produce 'cheating' normal that is very small sin wave
+  // pos * freq + time
+  float cwave = sin((vST.t * vST.s) * 64.0 + (uTime * 2.0 * 3.14159)) * 0.002;
+  cwave += (sin(((vST.t * vST.s) + 24.10) * 128.2 + (uTime * 2.0 * 3.14159)) * 0.001);
+  adjustedNormal.x += cwave;
+  adjustedNormal.z += cwave;
+
+  // avoid actual displacement here
+  //vert.y += cwave;
 
 	// setup perfragment lighting in vertex shader
 	perFragmentLighting(ECPosition, adjustedNormal);

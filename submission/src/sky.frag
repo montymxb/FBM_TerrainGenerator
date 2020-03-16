@@ -1,34 +1,29 @@
-//#version 210
+/**
+ * sky.frag
+ *  Fragment shader for the sky
+ */
 
 // seed provided outside, better random
 uniform float uSeed;
 // extremely slow time
 uniform float uSlowTime;
 
-uniform float	uTime;		// "Time", from Animate( )
+uniform float	uTime;
 
+//uniform int activeWarpColor; // texture warp active
 varying vec2  	vST;		// texture coords
-varying vec3    vMCPosition; // model coords
+varying vec3    vMCPosition;
 
 // shaded normal, light, eye vectors
 varying vec3 Ns;
 varying vec3 Ls;
 varying vec3 Es;
 
-// light position
-uniform float LightX;
-uniform float LightY;
-uniform float LightZ;
+uniform float uAmbient, uDiffuse, uSpecular;
+uniform vec3 SpecularColor;
+uniform float Shininess;
 
-// octaves to use
 uniform int uOctaves;
-
-uniform bool uFluidLandEnabled;
-
-// approximate eye light position
-vec3 eyeLightPosition = vec3(LightX,LightY,LightZ);
-
-const float PI = 	3.14159265;
 
 // from S.O., what does dot() do? (dot product, yes), and fract() (fraction, yes)
 // Random Poster: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl#4275343
@@ -104,78 +99,65 @@ float fbm(vec2 v) {
 
 }
 
-
-void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
-	vec3 normal = normalize(gl_NormalMatrix * adjustedNormal);
-
-	// set surface normal
-	Ns = normal;
-
-	// calc vector from point to light
-	Ls = eyeLightPosition - ECPosition.xyz;
-
-	// vec from point to eye position
-	Es = vec3(0.0, 0.0, 0.0) - ECPosition.xyz;
-
-	// adjust existing normals
-	/*
-	Ns = normal * Ns;
-	Ls = normal * Ls;
-	Es = normal * Es;
-	/**/
-
+float pow(float base, int pow) {
+  float val = base;
+  if(pow == 0) {
+    return 1.0;
+  }
+  for(int x = 1; x < pow; x++) {
+    val*=base;
+  }
+  return val;
 }
 
+// per fragment lighting in the FRAG shader
+vec4 perFragmentLighting(vec4 color) {
+  vec3 Normal,Light,Eye;
+  Normal = normalize(Ns);
+  Light = normalize(Ls);
+  Eye = normalize(Es);
 
-// calculates the surface normal that should be used
-vec3 calcNormal(vec3 p1, float modifier) {
-	// calculate 2 other points slightly farther along s and t
-	vec3 p2 = p1;
-	vec3 p3 = p1;
+  vec4 ambient = uAmbient * color;
 
-	// slightly shift p2's x up and calc new y
-	p2.x += 0.0001;
-	p2.y = fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)));
-	// slightly shift p3's z up and calc new y
-	p3.z += 0.0001;
-	p3.y = fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSeed)));
+  float d = max(dot(Normal,Light), 0.0);
+  vec4 diffuse = uDiffuse * d * color;
 
-	// calculate cross of vector(p1,p2) and vector(p1,p3)
-	vec3 v1 = p1 - p2;
-	vec3 v2 = p1 - p3;
-	vec3 normal = normalize(cross(v2,v1));
+  float s = 0.0;
+  // only do specular if the light can see the point
+  if(dot(Normal,Light) > 0.0) {
+    vec3 ref = normalize(2.0 * Normal * dot(Normal,Light) - Light);
+    s = pow(max(dot(Eye,ref), 0.0), Shininess);
 
-	// return as new normal
-	return normal;
+  }
+
+  vec4 specular = uSpecular * s * vec4(SpecularColor,1.0);
+
+  return vec4(ambient.rgb + diffuse.rgb + specular.rgb, 1.0);
 }
 
 
 void main() {
 
-	vec4 ECPosition = gl_ModelViewMatrix * gl_Vertex;
+  float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed))) * 2.0;
 
-	vST = gl_MultiTexCoord0.st;
-	//vec3 vert = ECPosition.xyz;
-	vec3 vert = gl_Vertex.xyz;
+  if(f <= 0.8) {
+    discard;
+  }
 
-	// pull aside S and T for noise
-	vec3 adjustedNormal;
-	if(!uFluidLandEnabled) {
-		vert.y = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSeed)));
-		adjustedNormal = calcNormal(vert, uSeed);
-	} else {
-		vert.y = fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + uSeed)));
-		adjustedNormal = gl_Normal;
-		//adjustedNormal = calcNormal(vert, uSeed);
+  vec4 color = mix(
+    vec4(0.0),
+    vec4(1.0),
+    (f - 0.8)
+  );
 
-	}
+  color *= 3.0;
 
-	// setup perfragment lighting in vertex shader
-	perFragmentLighting(ECPosition, adjustedNormal);
+  // hold alpha
+  float alpha = color.a;
 
-	// store model coordinates for use in frag shader
-	vMCPosition = vert.xyz;
+  // calc fragment lighting with color
+  color = perFragmentLighting(color);
 
-	gl_Position = gl_ModelViewProjectionMatrix * vec4(vert,1.0);
+  gl_FragColor = vec4(color.rgb, alpha);
 
 }

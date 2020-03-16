@@ -1,3 +1,6 @@
 
-ERROR: 0:96: Incompatible types (vec4 and vec3) in assignment (and no available implicit conversion)
+ERROR: 0:130: Use of undeclared identifier 'uOctaves'
+ERROR: 0:141: Use of undeclared identifier 'octaves'
+ERROR: 0:160: Use of undeclared identifier 'uCloudOctaves'
+ERROR: 0:171: Use of undeclared identifier 'octaves'
 
