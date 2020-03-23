@@ -59,9 +59,35 @@
 - If time consider physical wave displacement as a 3rd sheet that intersects the land, and is separate
   - means discarding the other section of the land as we work
 - try to use the same cloud logic code to add shadows in the land
-  - then we're done!
-
+  - then we're done
 - done, write up the report now
+- ((extended work, volume clouds))
+- create a box
+- create sky_vol.frag & sky_vol.vert
+- pass in the initial position and dimensions
+- need to get dynamic camera position relative to surface coord, probably need to pass that in unless it's available in the shader?
+  - needed ECPosition, which is in Eye Space, making the camera at <0,0,0>
+  - using this for what I key off of to read values in the frag shader is what works based on camera position
+- determine the eye position, and the following vertex position
+- as it stands just picking surface items
+- try discarding for vals < 0.0 or w/e
+- pass in volume start coordinates as uVolumeCords (passed in)
+- perform matrix mult to adjust old volume start coords to new camera cords
+- pass these along to the frag shader as vESVolumeCords (adjusted to eye space)
+- step the current position in Eye Coordinates along with small intervals until we hit outside the surface
+- calculate distance between point inside and outside the surface
+- use this to calculate our intervals for N steps
+- loop again, collecting values for each step interval
+- combine and use, or discard if no value
+- try and work it out
+
+- looks to be working, but it's far too obvious on the bounding box
+  - hypothesis...slowly drop the color as we get close to the edges, so the boundaries can't be seen
+  - test this for a simple thing other than fbm, like a small glowly sphere centered at the position in the middle?
+    - still with raycasting, but we don't care, we'll exit out anyways
+
+- read up on raycasting...seems to be a method to perform volume rendering (which is exactly what we want)
+- idea: using raycasting, allow us to compute from eye coordinates the approximate density of clouds being seen at a given fragment
 
 
 # references

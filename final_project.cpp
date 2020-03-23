@@ -152,10 +152,12 @@ int		DepthFightingOn;		// != 0 means to use the z-buffer
 GLSLProgram *LandscapePatt;
 GLSLProgram *WaterPatt;
 GLSLProgram *SkyPatt;
+GLSLProgram *SkyVolPatt;
 
 float programSeed;
 GLuint testSheetId;
 GLuint denseSheetId;
+GLuint boxList;
 
 float LightX;
 float LightY;
@@ -317,6 +319,100 @@ Animate()
 	glutPostRedisplay( );
 }
 
+// generates a basic box
+void generateBox() {
+	boxList = glGenLists(1);
+	glNewList(boxList, GL_COMPILE);
+
+	// set flat shading
+	glShadeModel(GL_SMOOTH);
+
+	// going to do object (and thus normal) scaling
+	glEnable(GL_NORMALIZE);
+
+	set_material(0.5, 0.5, 0.5, 10.0);
+
+	// bottom
+	glBegin(GL_POLYGON);
+	glNormal3f(0.0,0.0,-1.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f(  0.5, -0.5, -0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f(  0.5,  0.5, -0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( -0.5,  0.5, -0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( -0.5, -0.5, -0.5 );
+	glEnd();
+
+	// top
+	glBegin(GL_POLYGON);
+	glNormal3f(0.0,0.0,1.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f(  0.5, -0.5, 0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f(  0.5,  0.5, 0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( -0.5,  0.5, 0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( -0.5, -0.5, 0.5 );
+	glEnd();
+
+	// right
+	glBegin(GL_POLYGON);
+	glNormal3f(1.0,0.0,0.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f( 0.5, -0.5, -0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f( 0.5,  0.5, -0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( 0.5,  0.5,  0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( 0.5, -0.5,  0.5 );
+	glEnd();
+
+	// left
+	glBegin(GL_POLYGON);
+	glNormal3f(-1.0,0.0,1.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f( -0.5, -0.5,  0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f( -0.5,  0.5,  0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( -0.5,  0.5, -0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( -0.5, -0.5, -0.5 );
+	glEnd();
+
+	// front
+	glBegin(GL_POLYGON);
+	glNormal3f(0.0,1.0,0.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f(  0.5,  0.5,  0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f(  0.5,  0.5, -0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( -0.5,  0.5, -0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( -0.5,  0.5,  0.5 );
+	glEnd();
+
+	// back
+	glBegin(GL_POLYGON);
+	glNormal3f(0.0,-1.0,0.0);
+	glTexCoord2f(0.0, 0.0);
+	glVertex3f(  0.5, -0.5, -0.5 );
+	glTexCoord2f(1.0, 0.0);
+	glVertex3f(  0.5, -0.5,  0.5 );
+	glTexCoord2f(1.0, 1.0);
+	glVertex3f( -0.5, -0.5,  0.5 );
+	glTexCoord2f(0.0, 1.0);
+	glVertex3f( -0.5, -0.5, -0.5 );
+	glEnd();
+
+	glEndList();
+}
+
 
 // simple test sheet
 void generateSimpleTestSheet() {
@@ -448,6 +544,42 @@ void drawLandscape() {
 
 }
 
+
+// draws a crude box
+void drawBox() {
+	// use the landscape patt
+	SkyVolPatt->Use();
+	// used to seed fbm distribution
+	SkyVolPatt->SetUniformVariable("uSeed", programSeed * 2.0f);
+	// used as extremely slow time tick for flowing effects
+	SkyVolPatt->SetUniformVariable("uSlowTime", ActualTime * 0.1f);
+	// standard repeating time from 0 - 1
+	SkyVolPatt->SetUniformVariable("uTime", Time);
+	SkyVolPatt->SetUniformVariable("uAmbient", 0.1f);
+	SkyVolPatt->SetUniformVariable("uDiffuse", 0.6f);
+	SkyVolPatt->SetUniformVariable("uSpecular", 1.0f);
+	SkyVolPatt->SetUniformVariable("Shininess", 50.0f);
+	SkyVolPatt->SetUniformVariable("LightX", LightX);
+	SkyVolPatt->SetUniformVariable("LightY", LightY);
+	SkyVolPatt->SetUniformVariable("LightZ", LightZ);
+	SkyVolPatt->SetUniformVariable("SpecularColor", 1.0f, 1.0f, 1.0f);
+	SkyVolPatt->SetUniformVariable("uOctaves", CloudOctaves);
+	SkyVolPatt->SetUniformVariable("uVolumeStart", -0.5f, -0.5f, -0.5f);
+	SkyVolPatt->SetUniformVariable("uVolumeDimens", 1.0f, 1.0f, 1.0f);
+
+	glPushMatrix();
+	//glRotatef(360.0 * LongTime, 1.0, 0.0, 0.0);
+	//glScalef(1.0/2.0, 1.0, 1.0);
+	//glTranslatef(0.0,0.7,0.0);
+	glCallList(boxList);
+	glPopMatrix();
+
+	// no patt
+	SkyVolPatt->Use(0);
+
+}
+
+
 // draws the seascape component
 void drawWater() {
 	// use the landscape patt
@@ -521,108 +653,6 @@ void drawSun() {
 	glTranslatef(LightX, LightY, LightZ);
 	glCallList(testSheetId);
 	glPopMatrix();
-}
-
-
-// draws the city grid
-// TODO keep this and pull pieces out to build final assignment
-void drawCityGrid(float gridShiftSize) {
-
-	//if(ShadingAllActive == 1) {
-		/*
-		Pattern->Use();
-		Pattern->Use();
-		Pattern->SetUniformVariable("uTime", Time);
-		Pattern->SetUniformVariable("slowTime", LongTime);
-		Pattern->SetUniformVariable("slowSlowTime", LongLongTime);
-		//Pattern->SetUniformVariable("activeWarpCords", activeWarpCords);
-		Pattern->SetUniformVariable("activeWarpColor", activeWarpColor);
-		*/
-	//} else if(ShadingAllActive == 2) {
-		/*
-		CityBuildingPatt->Use();
-		CityBuildingPatt->SetUniformVariable("uTime", Time);
-		CityBuildingPatt->SetUniformVariable("slowTime", LongTime);
-		CityBuildingPatt->SetUniformVariable("slowSlowTime", LongLongTime);
-		CityBuildingPatt->SetUniformVariable("LightPosition", 25.0f, 25.0f, 25.0f);
-		CityBuildingPatt->SetUniformVariable("uKa", 0.9f);
-		CityBuildingPatt->SetUniformVariable("uKd", 0.5f);
-		CityBuildingPatt->SetUniformVariable("uKs", 0.1f);
-		CityBuildingPatt->SetUniformVariable("uColor", 0.5f, 0.5f, 0.5f);
-		CityBuildingPatt->SetUniformVariable("uSpecularColor", 0.5f, 0.5f, 0.0f);
-		CityBuildingPatt->SetUniformVariable("uShininess", 1.0f);
-		*/
-
-	//}
-
-	// TODO REMOVE
-	/*
-	Pattern->Use();
-	Pattern->SetUniformVariable("u_time", ActualTime);
-	*/
-	/*
-	Pattern->SetUniformVariable("uTime", Time);
-	Pattern->SetUniformVariable("slowTime", LongTime);
-	Pattern->SetUniformVariable("slowSlowTime", LongLongTime);
-	Pattern->SetUniformVariable("activeWarpCords", activeWarpCords);
-	Pattern->SetUniformVariable("activeWarpColor", activeWarpColor);
-	Pattern->SetUniformVariable("uRandVal1", uRandVal1);
-	Pattern->SetUniformVariable("uRandVal2", uRandVal2);
-	*/
-
-	// add the gradients
-	/*
-	Pattern->SetUniformVariable("uG0", gradients[0], gradients[1], gradients[2]);
-	Pattern->SetUniformVariable("uG1", gradients[3], gradients[4], gradients[5]);
-	Pattern->SetUniformVariable("uG2", gradients[6], gradients[7], gradients[8]);
-	Pattern->SetUniformVariable("uG3", gradients[9]);
-	*/
-
-	/* TODO PUT BACK for regular project
-	glPushMatrix();
-	for(int x = 0; x < CITY_GRID_SIZE; x++) {
-		glPushMatrix();
-		for(int y = 0; y < CITY_GRID_SIZE; y++) {
-			// shift along y
-			glTranslatef(0.0, gridShiftSize, 0.0);
-			glPushMatrix();
-			glScalef(1.0, 1.0, randomCitySizes[x][y]);
-			// test sheet id
-			set_material(1.0,0.0,0.0,10.0);
-			glCallList(house1);
-			glPopMatrix();
-
-		}
-		glPopMatrix();
-		// shift along x
-		glTranslatef(gridShiftSize, 0.0, 0.0);
-
-	}
-	glPopMatrix();
-	*/
-
-	// draw big floor underneath everything
-	/*
-	glPushMatrix();
-	glScalef(10.0, 10.0, 1.0);
-	//glTranslatef(0,0.05,0.0);
-	glCallList(testSheetId);
-	glPopMatrix();
-	/**/
-
-	// dense sheet version
-	/*
-	glPushMatrix();
-	glScalef(gridShiftSize * CITY_GRID_SIZE + 2.0, gridShiftSize * CITY_GRID_SIZE + 1.0, 1.0);
-	glTranslatef(0,0,-0.5);
-	glScalef(1.0, 1.0, 1.0);
-	glRotatef(-90.0, 1.0, 0.0, 0.0);
-	glCallList(denseSheetId);
-	glPopMatrix();
-	*/
-
-	//Pattern->Use(0);
-
 }
 
 
@@ -724,6 +754,7 @@ void Display() {
 	glPushMatrix();
 	glTranslatef(-0.5, -0.5, -0.5);
 
+	/*
 	if(EnableLand) {
 		drawLandscape();
 	}
@@ -733,6 +764,10 @@ void Display() {
 	if(EnableClouds) {
 		drawClouds();
 	}
+	*/
+
+	drawBox();
+
 	// draws the sun
 	drawSun();
 
@@ -1008,47 +1043,9 @@ void InitGraphics() {
 
 	// Load fragment/vertex shaders
 	LandscapePatt = loadShader("landscape.vert", "landscape.frag");
-	WaterPatt = loadShader("water.vert", "water.frag");
-	SkyPatt = loadShader("sky.vert","sky.frag");
-	/*
-	bool valid;
-	Pattern = new GLSLProgram( );
-	valid = Pattern->Create( "pattern.vert",  "cloud.frag" );
-	if( ! valid ) {
-		fprintf( stderr, "Shader cannot be created!\n" );
-		DoMainMenu( QUIT );
-	} else {
-		fprintf( stderr, "Shader created.\n" );
-	}
-	Pattern->SetVerbose( false );
-	*/
-	/**/
-
-	/*
-	CityBuildingPatt = new GLSLProgram();
-	valid = CityBuildingPatt->Create( "citybuildpatt.vert",  "citybuildpatt.frag" );
-	if( ! valid ) {
-		fprintf( stderr, "Shader cannot be created!\n" );
-		DoMainMenu( QUIT );
-	} else {
-		fprintf( stderr, "Shader created.\n" );
-	}
-	CityBuildingPatt->SetVerbose( false );
-	*/
-
-
-	// load per-fragment lighting shader
-	/*
-	FragmentLightProg = new GLSLProgram();
-	valid = FragmentLightProg->Create( "lighting.vert",  "lighting.frag" );
-	if( ! valid ) {
-		fprintf( stderr, "Shader cannot be created!\n" );
-		DoMainMenu( QUIT );
-	} else {
-		fprintf( stderr, "Shader created.\n" );
-	}
-	FragmentLightProg->SetVerbose( false );
-	/**/
+	WaterPatt 		= loadShader("water.vert", "water.frag");
+	SkyPatt 			= loadShader("sky.vert","sky.frag");
+	SkyVolPatt 		= loadShader("skyvol.vert", "skyvol.frag");
 
 }
 
@@ -1143,6 +1140,7 @@ void InitLists() {
   glEndList( );
 
 	// generate the test sheet lists
+	generateBox();
 	generateDenseSheet();
 	generateSimpleTestSheet();
 

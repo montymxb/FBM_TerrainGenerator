@@ -1,6 +1,3 @@
 
-ERROR: 0:130: Use of undeclared identifier 'uOctaves'
-ERROR: 0:141: Use of undeclared identifier 'octaves'
-ERROR: 0:160: Use of undeclared identifier 'uCloudOctaves'
-ERROR: 0:171: Use of undeclared identifier 'octaves'
+ERROR: 0:286: No matching function for call to fbm(vec2)
 
