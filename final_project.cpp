@@ -687,7 +687,8 @@ void Display() {
 	GLsizei v = vx < vy ? vx : vy;			// minimum dimension
 	GLint xl = ( vx - v ) / 2;
 	GLint yb = ( vy - v ) / 2;
-	glViewport(xl, yb, v, v);
+	// viewport fix?
+	glViewport(xl, yb, v * 2, v * 2);
 
 	// set the viewing volume:
 	// remember that the Z clipping  values are actually

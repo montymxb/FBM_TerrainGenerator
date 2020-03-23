@@ -81,6 +81,8 @@
 - combine and use, or discard if no value
 - try and work it out
 
+- try to fix 1/4 screen rendering, wtf is going on there?
+
 - looks to be working, but it's far too obvious on the bounding box
   - hypothesis...slowly drop the color as we get close to the edges, so the boundaries can't be seen
   - test this for a simple thing other than fbm, like a small glowly sphere centered at the position in the middle?
