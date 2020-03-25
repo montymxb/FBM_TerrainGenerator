@@ -1,4 +1,4 @@
-# FBM_TerrrainGenerator
+# FBM_TerrainGenerator
 Fractal Brownian Motion Terrain Generator. Produces land, water, and sky components. Demonstrational. This includes code for a flat sheet of clouds, and more recently cloud volumes (as can be seen below).
 
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cloud2.gif">
