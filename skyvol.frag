@@ -213,7 +213,7 @@ vec4 perFragmentLighting(vec4 color) {
   vec4 ambient = uAmbient * color * lightAlpha;
 
   float d = max(dot(Normal,Light), 0.0);
-  vec4 diffuse = uDiffuse * d * color * lightAlpha;
+  vec4 diffuse = uDiffuse * d * color;
 
   float s = 0.0;
   // only do specular if the light can see the point
@@ -479,12 +479,17 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	// calculate vector from final point rayCastPos to vECLight
 	// reduce to unit vector
 	// reduce to 1/10th of the unit vector
-	vec3 vRL = normalize(rayCastPos.xyz - vECLight) * 0.1;
+	vec3 vRL = normalize(rayCastPos.xyz - vECLight) * rayStepSizeMultiplier;
 	// apply fixed increments until we exit the volume
 	rayCastPos.xyz += vRL;
 	convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
+	steps = 0;
 	while(isWithinVolume(convertedPoint.xyz)) {
 		if(lightAlpha >= 1.0) {
+			break;
+		}
+
+		if(steps > maxSteps) {
 			break;
 		}
 
@@ -501,6 +506,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 		rayCastPos.xyz += vRL;
 		convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
+		steps++;
 
 	}
 

@@ -18,13 +18,11 @@ Additionally based on the concepts for terrain generation provided in [Job Talle
 
 Additionally, I added volumetric ray casting via shaders to render clouds as volumes instead of sheets. The definition can be variably adjusted to increase the quality of the clouds. These pictures were taken on my machine, which doesn't handle this too great, so the quality is a bit low, but the progression of the ray casting can be seen in the volumetric rendering.
 
-Notice that the lighting is still per-fragment, but needs to be updated to properly reflect the effect of the volumetric ray cast that forms the clouds.
+The lighting is something that could still be improved. Currently, it's taking the end point of the ray trace used to compute the color at a given point looking into the volume. Wherever the ray may have ended, or exited, the lighting is reduced by the number of additional values between that point and the source of the light. This is another ray cast towards the light source, and this reduces the effective lighting by any additional values it encounters.
 
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv5.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv6.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv7.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv8.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv9.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv10.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv11.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv12.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/b1.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/b2.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/b3.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/b4.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cloud1.gif">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cloud2.gif">
