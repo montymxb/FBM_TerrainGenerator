@@ -16,7 +16,9 @@ Additionally based on the concepts for terrain generation provided in [Job Talle
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/p6.png">
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/p7.png">
 
-Additionally, I added volumetric ray casting via shaders to render clouds as volumes instead of sheets. The definition can be variable adjusted to increase the quality of the clouds. These pictures were taken on my machine, which doesn't handle this too great, so the quality is a bit low, but the progression of the ray casting can be seen in the volumetric rendering.
+Additionally, I added volumetric ray casting via shaders to render clouds as volumes instead of sheets. The definition can be variably adjusted to increase the quality of the clouds. These pictures were taken on my machine, which doesn't handle this too great, so the quality is a bit low, but the progression of the ray casting can be seen in the volumetric rendering.
+
+Notice that the lighting is still per-fragment, but needs to be updated to properly reflect the effect of the volumetric ray cast that forms the clouds.
 
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv1.png">
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv2.png">
