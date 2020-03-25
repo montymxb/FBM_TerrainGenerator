@@ -252,6 +252,7 @@ int main( int argc, char *argv[ ] ) {
 	printf("f:\ttoggle freeze\n");
 	printf("1-9:\tset octaves to #\n");
 	printf("c:\ttoggle cloud 2D\n");
+	printf("h:\t center light source in middle of scene\n");
 	printf("s:\ttoggle sun rotation\n");
 	printf("w:\ttoggle water\n");
 	printf("e:\ttoggle land\n");
@@ -324,13 +325,6 @@ void Animate() {
 	if(EnableSunRotation) {
 		LightY = cos(LongTime * 2.0 * 3.14159) * 20.0f;
 		LightZ = sin(LongTime * 2.0 * 3.14159) * 20.0f;
-
-	} else {
-		// TODO kind of an odd setup
-		// lighting for cloud effects
-		//printf("Adjusting...\n");
-		LightY = cos(370 * 2.0 * 3.14159) * 20.0f;
-		LightZ = sin(370 * 2.0 * 3.14159) * 20.0f;
 
 	}
 
@@ -1301,6 +1295,13 @@ Keyboard( unsigned char c, int x, int y )
 
 		case '-':
 			WaterHeight-=0.01f;
+			break;
+
+		case 'h':
+			// centers the cloud lighting
+			LightX = 0.0f;
+			LightY = 0.0f;
+			LightZ = 0.0f;
 			break;
 
 		default:

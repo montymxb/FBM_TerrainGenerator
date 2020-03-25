@@ -432,7 +432,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 			}
 			rc2.xyz += rayStep;
 		}
-		*/
+		/**/
 
 		// Do again for Ray Cast #3
 		/*
@@ -450,7 +450,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 			}
 			rc3.xyz += rayStep;
 		}
-		*/
+		/**/
 
 		// bump our step count
 		steps++;
@@ -511,10 +511,12 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	}
 
 	// use the inverse of the alpha to apply a lighting change
+	// which will take effect in the 'perFragmentLighting' function
 	lightAlpha = 1.0 - lightAlpha;
 
 	// use vector from ray to light for normal
-	//ReplaceNormal = normalize(cross(v1,v2) + vRL);
+	// playing around with local normal plus ray to light vector, not really that good
+	//ReplaceNormal = normalize(cross(v1,v2) + normalize(vECLight - rayCastPos.xyz));
 	ReplaceNormal = normalize(vECLight - rayCastPos.xyz);
 
   // hold alpha

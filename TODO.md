@@ -146,8 +146,12 @@
 - calculate proper lighting for clouds now as well
   - compute 2 additional fbm points slightly off via x & z
     - normal doesn't look quite right
-
 - instead, try point lighting, calculate 2nd ray shooting from destination point to light, if it's clear light it, otherwise diminish by inverse of alpha encountered trying to exit the volume
+  - this worked fairly well, 2nd ray to light source was used to adjust alpha of per-fragment lighting, as well as to be the normal for the lighting equation. result looks pretty good
+
+- lighting is a bit backwards from the light source to the actual clouds
+
+- what happens when the light is inside the clouds?
 
 # references
 - https://thebookofshaders.com/13/

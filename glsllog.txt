@@ -1,6 +1,4 @@
 
-ERROR: 0:481: '-' does not operate on 'vec4' and 'vec3'
-ERROR: 0:483: Use of undeclared identifier 'vRL'
-ERROR: 0:502: Use of undeclared identifier 'vRL'
-ERROR: 0:509: Use of undeclared identifier 'vRL'
+ERROR: 0:519: Use of undeclared identifier 'v1'
+ERROR: 0:519: Use of undeclared identifier 'v2'
 
