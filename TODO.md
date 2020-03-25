@@ -54,7 +54,7 @@
   - increase density of sheet or scale it up (and clouds) by quite a lot
 - also perturb normals on this to make it look like the water, but slightly different, with clouds
   - compute normal by calculating 2 points slightly off, and then compute cross product to get normal
-- Polish this and see how it looks (fucking amazing)
+- Polish this and see how it looks (pretty amazing)
 - If time consider a volume for cloud
 - If time consider physical wave displacement as a 3rd sheet that intersects the land, and is separate
   - means discarding the other section of the land as we work
