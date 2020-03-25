@@ -191,6 +191,10 @@ float pow(float base, int pow) {
 }
 
 
+// replacement for the shaded normal, testing cloud work
+vec3 ReplaceNormal;
+
+
 // per fragment lighting in the FRAG shader
 vec4 perFragmentLighting(vec4 color) {
   vec3 Normal,Light,Eye;
@@ -358,6 +362,16 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	// convert point to model coordinates before we start
 	vec4 convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 
+	// setup 2 other converted ray casted points to trace through volume
+	// the end result of the 3 converted points will be used
+	// to compute the normal via the cross product of the 2 resultant vectors
+	vec4 rc2,rc3;
+	vec4 c2,c3;
+	rc2 = vec4(rayCastPos.x+0.5, rayCastPos.y, rayCastPos.z, rayCastPos.w);
+	rc3 = vec4(rayCastPos.x, rayCastPos.y, rayCastPos.z+0.5, rayCastPos.w);
+	// setup default colors for these as well
+	c2 = c3 = vec4(0.0);
+
 	// isWithinVolume(rayCastPos)
 	// isWithinVolume(convertedPoint.xyz)
 	while(isWithinVolume(convertedPoint.xyz) || steps == 0) {
@@ -395,7 +409,41 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 		// recalc next converted point
 		convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 
+		// Do again for Ray Cast #2
+		if(c2.a < 1.0) {
+			vec4 cp2 = vModelViewMatrix_Inverse * rc2;
+			f = fbm(cp2.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
+			if(f > 0.8) {
+				vec4 tColor = mix(
+					vec4(0.0),
+					vec4(1.0),
+					(f - 0.8)
+				);
+				tColor *= 0.222;
+				c2 += tColor;
+			}
+			rc2.xyz += rayStep;
+		}
+
+		// Do again for Ray Cast #3
+		if(c3.a < 1.0) {
+			vec4 cp3 = vModelViewMatrix_Inverse * rc3;
+			f = fbm(cp3.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
+			if(f > 0.8) {
+				vec4 tColor = mix(
+					vec4(0.0),
+					vec4(1.0),
+					(f - 0.8)
+				);
+				tColor *= 0.222;
+				c3 += tColor;
+			}
+			rc3.xyz += rayStep;
+		}
+
+		// bump our step count
 		steps++;
+
 	}
 
 	// color red if we are exceeding the ray length
@@ -405,19 +453,20 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	}
 
 
-	/*
 	if(color.a == 0.0) {
 		// discard if nothing to display
 		discard;
 
 	}
-	*/
+
+	// compute cross product of resulting ray cast end positions
+	vec3 v1 = (rayCastPos - rc2).xyz;
+	vec3 v2 = (rayCastPos - rc3).xyz;
+
+	ReplaceNormal = cross(v2,v1);
 
   // hold alpha
-  //float alpha = 1.0;
 	float alpha = color.a;
-
-	//color.r = 0.0;
 
   // calc fragment lighting with color
   color = perFragmentLighting(color);

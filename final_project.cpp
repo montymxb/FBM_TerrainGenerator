@@ -296,9 +296,7 @@ float LongLongTime;
 // this is typically where animation parameters are set
 //
 // do not call Display( ) from here -- let glutMainLoop( ) do it
-void
-Animate()
-{
+void Animate() {
 	// put animation stuff in here -- change some global variables
 	// for Display( ) to find:
 
@@ -324,8 +322,15 @@ Animate()
 
 	// check to enable sun rotation
 	if(EnableSunRotation) {
-		LightY = cos(LongTime * 2.0 * 3.14159) * 20.0f;
-		LightZ = sin(LongTime * 2.0 * 3.14159) * 20.0f;
+		LightY = cos(Time * 2.0 * 3.14159) * 20.0f;
+		LightZ = sin(Time * 2.0 * 3.14159) * 20.0f;
+
+	} else {
+		// TODO kind of an odd setup
+		// lighting for cloud effects
+		//printf("Adjusting...\n");
+		LightY = cos(370 * 2.0 * 3.14159) * 20.0f;
+		LightZ = sin(370 * 2.0 * 3.14159) * 20.0f;
 
 	}
 
@@ -1268,6 +1273,7 @@ Keyboard( unsigned char c, int x, int y )
 
 		case 's':
 			EnableSunRotation = EnableSunRotation ? false : true;
+			printf("Time: %d\n", LongLongTime);
 			break;
 
 		case 'w':

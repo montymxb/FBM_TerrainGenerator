@@ -145,6 +145,8 @@
   - followed by transparent components (cloud volume)
 
 - calculate proper lighting for clouds now as well
+  - try the easy way, but not necessarily the best, which is to compute 2 additional fbm points slightly off via x & z
+    - expensive, but then we can compute the cross product of the two resulting vectors to compute the cloud normal
   - use the density to determine how much light passes through (alpha good)
   - normal is inverse of penetrating ray direction?
     - may have to think about how clouds handle light...

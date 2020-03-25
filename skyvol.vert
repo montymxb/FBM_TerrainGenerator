@@ -244,15 +244,13 @@ void main() {
   // calculate initial point shifted into eye coordinates
   vVolumeStart = uVolumeStart;
   vVolumeDimens = uVolumeDimens;
-  //vVolumeStart = (gl_ModelViewMatrix * vec4(uVolumeStart,1.0)).xyz;
-  //vVolumeDimens = uVolumeDimens;//(gl_ModelViewMatrix * vec4(uVolumeStart + uVolumeDimens,1.0)).xyz;
 
 	vST = gl_MultiTexCoord0.st;
 	//vec3 vert = ECPosition.xyz;
 	vec3 vert = gl_Vertex.xyz;
 
-	//vec3 adjustedNormal = calcNormal(vert, uSlowTime);
-  vec3 adjustedNormal = gl_Normal;
+	vec3 adjustedNormal = calcNormal(vert, 1.0);
+  //vec3 adjustedNormal = gl_Normal;
 
 	// setup perfragment lighting in vertex shader
   // ECPosition.xyz - vert;
