@@ -20,3 +20,4 @@ Additionally, I added volumetric ray casting via shaders to render clouds as vol
 
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv1.png">
 <img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv2.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv3.png">
