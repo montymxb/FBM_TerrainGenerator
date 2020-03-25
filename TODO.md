@@ -80,17 +80,74 @@
 - loop again, collecting values for each step interval
 - combine and use, or discard if no value
 - try and work it out
-
 - try to fix 1/4 screen rendering, wtf is going on there?
-
+  - seems the scale coordinates got halved somehow? (system related potentially)
 - looks to be working, but it's far too obvious on the bounding box
   - hypothesis...slowly drop the color as we get close to the edges, so the boundaries can't be seen
   - test this for a simple thing other than fbm, like a small glowly sphere centered at the position in the middle?
     - still with raycasting, but we don't care, we'll exit out anyways
-
+- fix box to 0,0,0
+- test with sphere in the middle for raycasting equation
+  - purpose is to determine if we are casting rays as intended
+  - sphere is not showing up for somet reason
+- buggy raycast works, but the coordinates are incorrect for some reason?
+- try with increased definition, just to see how it looks
+- coordinates seem to be 'stuck' based on old vMCPosition stuff
+  - check where vMCPosition comes from
+> check Eye coordinate setup for static appearance (looking for 3Disms)
+  - almost, just a probe however (in camera space, makes sense...)
+- try water effect on the EC stuff too (as a long sheet, super long, ocean long)
+  - looks like a bar of metal maybe...kinda cool
+- note on using model coordinates
+  - no 3D effect as we pan around the object (bad)
+    - appears computations are fixed without regard to camera position
+  - but it does make the coordinates local to the object (good)
+  - solution: need to factor in model coordinates combined with the actual camera coordinates somehow...
+  - that would give us our 3D effect
+- idea: try using model coordinates to calculate a point in space, but use EyeCoordinates to cast ray trace code?
+  - result: it's starting to show depth, but it's also 'stuck' in certain viewing angles, which is odd
+- experiment last night tells me that eye coordinates are the appropriate ones to use, but need to instead use the values associated with the original model coordinates for the data to feed from...will have to mix this in somehow...but keep that in mind
+  - a little unsure how to do this still, so reading up more details
+    - https://stackoverflow.com/questions/9482572/volume-rendering-using-glsl-with-ray-casting-algorithm#9496311 (comments about this in later versions of opengl)
+    - https://github.com/toolchainX/Volume_Rendering_Using_GLSL (just a note that this is already done in some libs)
+    - https://community.khronos.org/t/getting-camera-position-relative-to-vertex/62393 (getting camera relative to vertex, clarification, you don't...)
+    - https://thebookofshaders.com/08/ (custom matrices)
+    - https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/normalize.xhtml (produces unit vectors)
+    - https://www.khronos.org/opengl/wiki/Data_Type_(GLSL) (data types)
+    - https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glViewport.xml (glviewport code)
+    - https://stackoverflow.com/questions/10264949/glsl-gl-fragcoord-z-calculation-and-setting-gl-fragdepth (setting frag depth)
+    - http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/ (ray marching)
+    - https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work?url=3d-basic-rendering/introduction-to-ray-tracing/how-does-it-work (intro to ray tracing)
+    - http://www.codinglabs.net/article_world_view_projection_matrix.aspx (matrices)
+    - https://stackoverflow.com/questions/2422750/in-opengl-vertex-shaders-what-is-w-and-why-do-i-divide-by-it (homogenous vertex for 'w')
+    - http://glprogramming.com/red/ (OpenGL Red Book)
+    - https://www.khronos.org/opengl/wiki/Viewing_and_Transformations (viewing and transformations according to khronos group, useful for going back to model view coords via inverse matrix)
+- try inversion of modelview_matrix on advancing vector point to produce original model coordinates
+  - This was the solution, needed to revert eye coordinates back to model coordinates in order to calculate OG data points
+    - needed to compute inverse of ModelView Matrix, and use it to multiply against the tracing eye coordinates, to then produce the OG model coordinates
+  - if this works, also try it to make our bounds check using the original coordinates as well
+- next thing, getting the bounds check working
+  - using fixed coordinates, and attempting to bounds check on reconverted model coordinates results in heavy screen flicker, but results look correct...not entirely sure why
+    - try using it with vec4 from other applications, so we can keep our 'w'
+      - no effect
+      - attempting to determine what the 'black' is coming from
+        - was coming from bad initial bounds detection, doing a safe initial check fixes it
+- increase max trace limit to 100
+- play with long sheet of clouds then
+- play with 2 different fbm colors being used, with diff seeds
 - read up on raycasting...seems to be a method to perform volume rendering (which is exactly what we want)
 - idea: using raycasting, allow us to compute from eye coordinates the approximate density of clouds being seen at a given fragment
+- sun does not reflect off of black...adjust that accordingly
+  - just had to reinstate the alpha so the lighting doesn't reflect off of every surface
+- check if terrain displays under it
+  - fix was ordering of elements since depth test was enabled
+  - had to render opaque elements first (terrain, water, clouds, etc)
+  - followed by transparent components (cloud volume)
 
+- calculate proper lighting for clouds now as well
+  - use the density to determine how much light passes through (alpha good)
+  - normal is inverse of penetrating ray direction?
+    - may have to think about how clouds handle light...
 
 # references
 - https://thebookofshaders.com/13/

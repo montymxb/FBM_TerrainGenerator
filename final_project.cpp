@@ -166,13 +166,14 @@ float LightZ;
 //
 // Control Variables
 //
-int CloudOctaves = 4;
+int CloudOctaves = 8;
 int LandOctaves = 8;
-int WaterOctaves = 4;
+int WaterOctaves = 8;
 float WaterHeight = 0.0f;
 bool EnableClouds = false;
 bool EnableSunRotation = false;
-bool EnableLand = true;
+bool EnableCloudVolume = true;
+bool EnableLand = false;
 bool EnableWater = false;
 bool EnableShading = false;
 bool EnableFluidLand = false;
@@ -224,9 +225,7 @@ void	HsvRgb( float[3], float [3] );
 
 // main program:
 
-int
-main( int argc, char *argv[ ] )
-{
+int main( int argc, char *argv[ ] ) {
 	// turn on the glut package:
 	// (do this before checking argc and argv since it might
 	// pull some command line arguments out)
@@ -247,6 +246,21 @@ main( int argc, char *argv[ ] )
 
 	const GLubyte *str = glGetString(GL_VERSION);
 	printf("OpenGL Version: %s\n", str);
+
+	printf("::Commands::\n");
+	printf("q/esc:\tquit\n");
+	printf("f:\ttoggle freeze\n");
+	printf("1-9:\tset octaves to #\n");
+	printf("c:\ttoggle cloud 2D\n");
+	printf("s:\ttoggle sun rotation\n");
+	printf("w:\ttoggle water\n");
+	printf("e:\ttoggle land\n");
+	printf("m:\ttoggle cloud volume\n");
+	printf("d:\ttoggle cloud shadows\n");
+	printf("t:\ttoggle flowing land\n");
+	printf("=:\tincrease water height\n");
+	printf("-:\tdecrease water height\n");
+	printf("option + click + move:\tzoom\n");
 
 	// create the display structures that will not change:
 	InitLists( );
@@ -545,8 +559,8 @@ void drawLandscape() {
 }
 
 
-// draws a crude box
-void drawBox() {
+// draws a cloud volume
+void drawCloudVolume() {
 	// use the landscape patt
 	SkyVolPatt->Use();
 	// used to seed fbm distribution
@@ -566,11 +580,12 @@ void drawBox() {
 	SkyVolPatt->SetUniformVariable("uOctaves", CloudOctaves);
 	SkyVolPatt->SetUniformVariable("uVolumeStart", -0.5f, -0.5f, -0.5f);
 	SkyVolPatt->SetUniformVariable("uVolumeDimens", 1.0f, 1.0f, 1.0f);
+	SkyVolPatt->SetUniformVariable("uEyeAt", 1.0, 1.0, 1.0);
 
 	glPushMatrix();
 	//glRotatef(360.0 * LongTime, 1.0, 0.0, 0.0);
-	//glScalef(1.0/2.0, 1.0, 1.0);
-	//glTranslatef(0.0,0.7,0.0);
+	//glScalef(10.0, 10.0, 1.0);
+	glTranslatef(0.0,0.5,0.0);
 	glCallList(boxList);
 	glPopMatrix();
 
@@ -667,6 +682,7 @@ void Display() {
 
 	// erase the background:
 	glDrawBuffer( GL_BACK );
+	// GL_ONE_MINUS_DST_ALPHA
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -708,12 +724,12 @@ void Display() {
 
 	// set the eye position, look-at position, and up-vector:
 	gluLookAt(
-		0.5, 0.5, 0.5,
+		1.5, 2.2, 1.5,
 		0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0
 	);
 
-	// rotate the scene, when not in the heli
+	// rotate the scene
 	glRotatef( (GLfloat)Yrot, 0., 1., 0. );
 	glRotatef( (GLfloat)Xrot, 1., 0., 0. );
 
@@ -740,7 +756,7 @@ void Display() {
 		set_material(1.0,1.0,1.0,5.0);
 		glColor3fv( &Colors[WhichColor][0] );
 		glPushMatrix();
-		glTranslatef(-3.0,0.,0.);
+		glTranslatef(0.0,0.0,0.0);
 		glCallList( AxesList );
 		glPopMatrix();
 
@@ -753,9 +769,12 @@ void Display() {
 	glEnable(GL_LIGHTING);
 
 	glPushMatrix();
+	//glScalef(1.0, 1.0, 1.0);
+
+	glPushMatrix();
 	glTranslatef(-0.5, -0.5, -0.5);
 
-	/*
+	/**/
 	if(EnableLand) {
 		drawLandscape();
 	}
@@ -765,12 +784,17 @@ void Display() {
 	if(EnableClouds) {
 		drawClouds();
 	}
-	*/
-
-	drawBox();
+	/**/
 
 	// draws the sun
 	drawSun();
+
+	glPopMatrix();
+
+	// box test
+	if(EnableCloudVolume) {
+		drawCloudVolume();
+	}
 
 	glPopMatrix();
 
@@ -1253,6 +1277,9 @@ Keyboard( unsigned char c, int x, int y )
 		case 'e':
 			EnableLand = EnableLand ? false : true;
 			break;
+
+		case 'm':
+			EnableCloudVolume = EnableCloudVolume ? false : true;
 
 		case 'd':
 			EnableShading = EnableShading ? false : true;
