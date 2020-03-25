@@ -322,8 +322,8 @@ void Animate() {
 
 	// check to enable sun rotation
 	if(EnableSunRotation) {
-		LightY = cos(Time * 2.0 * 3.14159) * 20.0f;
-		LightZ = sin(Time * 2.0 * 3.14159) * 20.0f;
+		LightY = cos(LongTime * 2.0 * 3.14159) * 20.0f;
+		LightZ = sin(LongTime * 2.0 * 3.14159) * 20.0f;
 
 	} else {
 		// TODO kind of an odd setup

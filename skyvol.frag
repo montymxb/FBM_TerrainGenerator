@@ -40,6 +40,10 @@ varying mat4 vModelViewMatrix_Inverse;
 // eye position
 uniform vec3 uEyeAt;
 
+// eye coordinate lights
+varying vec3 vECLight;
+
+
 // from S.O., what does dot() do? (dot product, yes), and fract() (fraction, yes)
 // Random Poster: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl#4275343
 // Detailed Sourcing: https://stackoverflow.com/questions/12964279/whats-the-origin-of-this-glsl-rand-one-liner
@@ -191,21 +195,25 @@ float pow(float base, int pow) {
 }
 
 
-// replacement for the shaded normal, testing cloud work
+// replacement for the shaded normal from the vertex shader
+// instead computes the normal with respect to the termination positions of 3 rays
 vec3 ReplaceNormal;
+
+// used to compute modification of lighting
+float lightAlpha = 0.0;
 
 
 // per fragment lighting in the FRAG shader
 vec4 perFragmentLighting(vec4 color) {
   vec3 Normal,Light,Eye;
-  Normal = normalize(Ns);
+  Normal = normalize(ReplaceNormal);
   Light = normalize(Ls);
   Eye = normalize(Es);
 
-  vec4 ambient = uAmbient * color;
+  vec4 ambient = uAmbient * color * lightAlpha;
 
   float d = max(dot(Normal,Light), 0.0);
-  vec4 diffuse = uDiffuse * d * color;
+  vec4 diffuse = uDiffuse * d * color * lightAlpha;
 
   float s = 0.0;
   // only do specular if the light can see the point
@@ -215,7 +223,7 @@ vec4 perFragmentLighting(vec4 color) {
 
   }
 
-  vec4 specular = uSpecular * s * vec4(SpecularColor,1.0);
+  vec4 specular = uSpecular * s * vec4(SpecularColor,1.0) * lightAlpha;
 
   return vec4(ambient.rgb + diffuse.rgb + specular.rgb, 1.0);
 }
@@ -343,9 +351,9 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	// changes the ray step size
 	// 0.025, 0.0125
-	float rayStepSizeMultiplier = 0.05;
+	float rayStepSizeMultiplier = 0.01;
 	// max # of steps that are allowed before stopping the ray cast
-	int maxSteps = 70;
+	int maxSteps = 200;
 
 	// default is no color
 	vec4 color = vec4(0.0);
@@ -362,15 +370,16 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	// convert point to model coordinates before we start
 	vec4 convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 
+	// TODO old ray tracing method for lighting
 	// setup 2 other converted ray casted points to trace through volume
 	// the end result of the 3 converted points will be used
 	// to compute the normal via the cross product of the 2 resultant vectors
-	vec4 rc2,rc3;
-	vec4 c2,c3;
-	rc2 = vec4(rayCastPos.x+0.5, rayCastPos.y, rayCastPos.z, rayCastPos.w);
-	rc3 = vec4(rayCastPos.x, rayCastPos.y, rayCastPos.z+0.5, rayCastPos.w);
+	//vec4 rc2,rc3;
+	//vec4 c2,c3;
+	//rc2 = vec4(rayCastPos.x+0.01, rayCastPos.y, rayCastPos.z, rayCastPos.w);
+	//rc3 = vec4(rayCastPos.x, rayCastPos.y, rayCastPos.z+0.01, rayCastPos.w);
 	// setup default colors for these as well
-	c2 = c3 = vec4(0.0);
+	//c2 = c3 = vec4(0.0);
 
 	// isWithinVolume(rayCastPos)
 	// isWithinVolume(convertedPoint.xyz)
@@ -378,12 +387,10 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 		if(color.a >= 1.0) {
 			// color maxed out, exit
 			break;
-
 		}
 
 		if(steps > maxSteps) {
 			break;
-
 		}
 
 		/**/
@@ -410,6 +417,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 		convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 
 		// Do again for Ray Cast #2
+		/*
 		if(c2.a < 1.0) {
 			vec4 cp2 = vModelViewMatrix_Inverse * rc2;
 			f = fbm(cp2.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
@@ -424,8 +432,10 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 			}
 			rc2.xyz += rayStep;
 		}
+		*/
 
 		// Do again for Ray Cast #3
+		/*
 		if(c3.a < 1.0) {
 			vec4 cp3 = vModelViewMatrix_Inverse * rc3;
 			f = fbm(cp3.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
@@ -440,6 +450,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 			}
 			rc3.xyz += rayStep;
 		}
+		*/
 
 		// bump our step count
 		steps++;
@@ -447,6 +458,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	}
 
 	// color red if we are exceeding the ray length
+	// this is a debug feature
 	if(steps > maxSteps) {
 		color = vec4(1.0, 0.0, 0.0, 1.0);
 
@@ -455,15 +467,49 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	if(color.a == 0.0) {
 		// discard if nothing to display
+		// no need to draw empty fragments
 		discard;
 
 	}
 
 	// compute cross product of resulting ray cast end positions
-	vec3 v1 = (rayCastPos - rc2).xyz;
-	vec3 v2 = (rayCastPos - rc3).xyz;
+	//vec3 v1 = (rayCastPos - rc2).xyz;
+	//vec3 v2 = (rayCastPos - rc3).xyz;
 
-	ReplaceNormal = cross(v2,v1);
+	// calculate vector from final point rayCastPos to vECLight
+	// reduce to unit vector
+	// reduce to 1/10th of the unit vector
+	vec3 vRL = normalize(rayCastPos.xyz - vECLight) * 0.1;
+	// apply fixed increments until we exit the volume
+	rayCastPos.xyz += vRL;
+	convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
+	while(isWithinVolume(convertedPoint.xyz)) {
+		if(lightAlpha >= 1.0) {
+			break;
+		}
+
+		// sum up the alphas using the same equation as above
+		float g = fbm(convertedPoint.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
+		if(g > 0.8) {
+			float tAlpha = mix(
+				0.0,
+				1.0,
+				(g - 0.8)
+			) * 0.222;
+			lightAlpha += tAlpha;
+		}
+
+		rayCastPos.xyz += vRL;
+		convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
+
+	}
+
+	// use the inverse of the alpha to apply a lighting change
+	lightAlpha = 1.0 - lightAlpha;
+
+	// use vector from ray to light for normal
+	//ReplaceNormal = normalize(cross(v1,v2) + vRL);
+	ReplaceNormal = normalize(vECLight - rayCastPos.xyz);
 
   // hold alpha
 	float alpha = color.a;
@@ -479,7 +525,10 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 void main() {
 
+	// this one does not help
 	//getColor_ByRayCast_NoBound_UsingModelCoordinates();
+
+	// this is the one to use
 	getColor_ByRayCast_NoBound_UsingEyeCoordinates();
 
 }

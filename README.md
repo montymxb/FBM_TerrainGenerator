@@ -20,6 +20,11 @@ Additionally, I added volumetric ray casting via shaders to render clouds as vol
 
 Notice that the lighting is still per-fragment, but needs to be updated to properly reflect the effect of the volumetric ray cast that forms the clouds.
 
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv1.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv2.png">
-<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv3.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv5.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv6.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv7.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv8.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv9.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv10.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv11.png">
+<img width=500 src="https://github.com/montymxb/FBM_TerrrainGenerator/blob/master/submission/cv12.png">

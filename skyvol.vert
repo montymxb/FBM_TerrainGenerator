@@ -25,6 +25,9 @@
  uniform float LightY;
  uniform float LightZ;
 
+ // eye coordinate lights
+ varying vec3 vECLight;
+
  uniform int uOctaves;
 
  // start of the volume
@@ -262,6 +265,9 @@ void main() {
   vECPosition = ECPosition;
   // store gl position
   vGLPosition = (gl_ModelViewProjectionMatrix * vec4(vert,1.0)).xyz;
+
+  // convert light to eye coordinates to use in the next stage
+  vECLight = (gl_ModelViewMatrix * vec4(LightX, LightY, LightZ, 1.0)).xyz;
 
   // calculate invers of model view matrix
   vModelViewMatrix_Inverse = inverse(gl_ModelViewMatrix);
