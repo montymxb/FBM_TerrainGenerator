@@ -172,8 +172,8 @@ int WaterOctaves = 8;
 float WaterHeight = 0.0f;
 bool EnableClouds = false;
 bool EnableSunRotation = false;
-bool EnableCloudVolume = true;
-bool EnableLand = false;
+bool EnableCloudVolume = false;
+bool EnableLand = true;
 bool EnableWater = false;
 bool EnableShading = false;
 bool EnableFluidLand = false;
@@ -450,13 +450,13 @@ void generateSimpleTestSheet() {
 	glVertex3f(0.0, 0.0, 0.0);
 
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, 0.0, 1.0);
 
 	glTexCoord2f(1.0, 0.0);
 	glVertex3f(1.0, 0.0, 0.0);
 
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f(1.0, 1.0, 0.0);
+	glVertex3f(1.0, 0.0, 1.0);
 
 	glEnd();
 
@@ -486,7 +486,7 @@ void generateDenseSheet() {
 	// draw plate made of pieces
 	float xPos = 0.0;
 	float zPos = 0.0;
-	float definition = 50;
+	float definition = 100;
 	float increment = 1.00 / definition;
 
 	for(int x = 0; x < definition; x++) {
@@ -528,7 +528,7 @@ void drawLandscape() {
 	// used to seed fbm distribution
 	LandscapePatt->SetUniformVariable("uSeed", programSeed);
 	// used as extremely slow time tick for flowing effects
-	LandscapePatt->SetUniformVariable("uSlowTime", ActualTime * 0.1f);
+	LandscapePatt->SetUniformVariable("uSlowTime", ActualTime * 0.01f); // ActualTime * 0.01f
 	// standard repeating time from 0 - 1
 	LandscapePatt->SetUniformVariable("uTime", Time);
 	LandscapePatt->SetUniformVariable("uAmbient", 0.3f);
@@ -583,7 +583,7 @@ void drawCloudVolume() {
 
 	glPushMatrix();
 	//glRotatef(360.0 * LongTime, 1.0, 0.0, 0.0);
-	//glScalef(10.0, 10.0, 1.0);
+	//glScalef(1.0, 1.0, 1.0);
 	glTranslatef(0.0,0.5,0.0);
 	glCallList(boxList);
 	glPopMatrix();
@@ -604,10 +604,10 @@ void drawWater() {
 	WaterPatt->SetUniformVariable("uSlowTime", ActualTime * 0.01f);
 	// standard repeating time from 0 - 1
 	WaterPatt->SetUniformVariable("uTime", Time);
-	WaterPatt->SetUniformVariable("uAmbient", 0.1f);
-	WaterPatt->SetUniformVariable("uDiffuse", 0.6f);
-	WaterPatt->SetUniformVariable("uSpecular", 1.0f);
-	WaterPatt->SetUniformVariable("Shininess", 50.0f);
+	WaterPatt->SetUniformVariable("uAmbient", 0.2f);
+	WaterPatt->SetUniformVariable("uDiffuse", 0.8f);
+	WaterPatt->SetUniformVariable("uSpecular", 0.3f); // 0.15
+	WaterPatt->SetUniformVariable("Shininess", 55.0f); // 55.0
 	WaterPatt->SetUniformVariable("LightX", LightX);
 	WaterPatt->SetUniformVariable("LightY", LightY);
 	WaterPatt->SetUniformVariable("LightZ", LightZ);

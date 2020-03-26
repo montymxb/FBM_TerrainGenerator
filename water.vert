@@ -128,19 +128,31 @@ void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
 }
 
 
+// returns the water 'Y' for a given point on a 2D grid
+float getWaterY(vec2 p) {
+	float fval = fbm(p * 20.0 + uSlowTime * 5.0 + uSeed) * 0.025;
+	float sval = sin(uTime * 2.0 * 3.14159 + ((p.x + 0.31) * (p.y+0.89) * 11.429)) * 0.004;
+	return fval+sval;
+}
+
+
 // calculates the surface normal that should be used
-vec3 calcNormal(vec3 p1, float modifier) {
+vec3 calcNormal(vec3 p1) {
 	// calculate 2 other points slightly farther along s and t
-  p1.y = 1.0;
+  //p1.y = 1.0;
 	vec3 p2 = p1;
 	vec3 p3 = p1;
 
 	// slightly shift p2's x up and calc new y
-	p2.x += 0.0001;
-  p2.y += fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSlowTime + uSeed))) * 0.05;
+	p2.x += 0.025;
+	p2.y = getWaterY(p2.xz);
+	//p2.y = (fbm(p2.xz * 20.0 + modifier + uSeed) * 0.05) + (sin(uTime * 2.0 * 3.14159 + (p2.x * 20.0)) * 0.01);
+  //p2.y += fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + modifier + uSeed))) * 0.05;
 	// slightly shift p3's z up and calc new y
-	p3.z += 0.0001;
-  p3.y += fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSlowTime + uSeed))) * 0.05;
+	p3.z += 0.025;
+	p3.y = getWaterY(p3.xz);
+	//p3.y = (fbm(p3.xz * 20.0 + modifier + uSeed) * 0.05) + (sin(uTime * 2.0 * 3.14159 + (p2.x * 20.0)) * 0.01);
+  //p3.y += fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + modifier + uSeed))) * 0.05;
 
 	// calculate cross of vector(p1,p2) and vector(p1,p3)
 	vec3 v1 = p1 - p2;
@@ -162,23 +174,15 @@ void main() {
 
 	// pull aside S and T for noise
   // f(p) = fbm( p + fbm( p + fbm( p ) ) )
-  float ff = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSlowTime + uSeed))) * 0.05;
-  vert.y = ff + uWaterHeight;
+  //float ff = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSlowTime + uSeed))) * 0.05;
+	float oldY = vert.y;
+  vert.y = getWaterY(vert.xz);
 
-  vert.y += 0.43;
+	vec3 adjustedNormal = calcNormal(vert);
 
-	//vec3 adjustedNormal = calcNormal(vert, uSlowTime);
-  vec3 adjustedNormal = gl_Normal;
-
-  // produce 'cheating' normal that is very small sin wave
-  // pos * freq + time
-  float cwave = sin((vST.t * vST.s) * 64.0 + (uTime * 2.0 * 3.14159)) * 0.002;
-  cwave += (sin(((vST.t * vST.s) + 24.10) * 128.2 + (uTime * 2.0 * 3.14159)) * 0.001);
-  adjustedNormal.x += cwave;
-  adjustedNormal.z += cwave;
-
-  // avoid actual displacement here
-  //vert.y += cwave;
+	// adjustment to mesh with estimated land height
+	vert.y = oldY;
+  vert.y += (0.43 + uWaterHeight);
 
 	// setup perfragment lighting in vertex shader
 	perFragmentLighting(ECPosition, adjustedNormal);

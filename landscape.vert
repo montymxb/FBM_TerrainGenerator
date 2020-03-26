@@ -127,6 +127,12 @@ void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
 }
 
 
+float getY(vec2 p) {
+	// fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)))
+	return fbm(p + uSeed + fbm(p + fbm(p + uSeed)));
+}
+
+
 // calculates the surface normal that should be used
 vec3 calcNormal(vec3 p1, float modifier) {
 	// calculate 2 other points slightly farther along s and t
@@ -134,11 +140,13 @@ vec3 calcNormal(vec3 p1, float modifier) {
 	vec3 p3 = p1;
 
 	// slightly shift p2's x up and calc new y
-	p2.x += 0.0001;
-	p2.y = fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)));
+	p2.x += 0.01;
+	// fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)))
+	p2.y = getY(p2.xz);
 	// slightly shift p3's z up and calc new y
-	p3.z += 0.0001;
-	p3.y = fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSeed)));
+	p3.z += 0.01;
+	// fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSeed)))
+	p3.y = getY(p3.xz);
 
 	// calculate cross of vector(p1,p2) and vector(p1,p3)
 	vec3 v1 = p1 - p2;
@@ -161,8 +169,10 @@ void main() {
 	// pull aside S and T for noise
 	vec3 adjustedNormal;
 	if(!uFluidLandEnabled) {
-		vert.y = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSeed)));
+		//vert.y = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSeed)));
+		vert.y = getY(vert.xz);
 		adjustedNormal = calcNormal(vert, uSeed);
+
 	} else {
 		vert.y = fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + uSeed)));
 		adjustedNormal = gl_Normal;

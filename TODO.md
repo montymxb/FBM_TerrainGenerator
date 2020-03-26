@@ -148,10 +148,29 @@
     - normal doesn't look quite right
 - instead, try point lighting, calculate 2nd ray shooting from destination point to light, if it's clear light it, otherwise diminish by inverse of alpha encountered trying to exit the volume
   - this worked fairly well, 2nd ray to light source was used to adjust alpha of per-fragment lighting, as well as to be the normal for the lighting equation. result looks pretty good
-
 - lighting is a bit backwards from the light source to the actual clouds
-
+  - small potatoes
 - what happens when the light is inside the clouds?
+  - lighting looks good when the source is within the volume, all around drops off as density of clouds cuts off the light
+  - still glows at the edges, softening them up a bit
+- improve water quality
+  - step back to 1 solid color
+  - add in vertex displacement via
+    - better sin wave
+    - and fpm
+    - look for chop
+    - looks pretty decent with just lighting, and no color
+  - now setup with color
+- water is far too shiny, reduce either:
+  - the frequency of the wavelets
+  - specular highlight factor
+  - water looks much better now
+- finally, can the land be subtly improved texture wise?
+  - yes, by increasing the sheet density (100+ looks okay, 200+ looks great, 400+ looks extrememly good, but lags crazily)
+
+- consider reducing water effects to only be in fragment shader (unneeded to compute via vertex shader, except to adjust normal)
+  - with respect to x & z still, so it doesn't get weird...
+  - worry about it tomorrow
 
 # references
 - https://thebookofshaders.com/13/

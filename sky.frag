@@ -138,7 +138,8 @@ vec4 perFragmentLighting(vec4 color) {
 
 void main() {
 
-  float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed))) * 2.0;
+  //float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed))) * 2.0;
+	float f = fbm(vMCPosition.xz + uSeed + fbm(vMCPosition.xz + uSlowTime + uSeed)) * 2.0;
 
   if(f <= 0.8) {
     discard;

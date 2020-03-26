@@ -229,7 +229,8 @@ void main() {
   // Also calculate cloud cover
   //
   if(uCloudsEnabled && uShadingEnabled) {
-    float f = fbm_shader(vST + fbm_shader(vST + fbm_shader(vST + uSlowTime + uSeed))) * 2.0;
+    //float f = fbm_shader(vST + fbm_shader(vST + fbm_shader(vST + uSlowTime + uSeed))) * 2.0;
+    float f = fbm_shader(vMCPosition.xz + uSeed + fbm_shader(vMCPosition.xz + uSlowTime + uSeed)) * 2.0;
 
     if(f > 0.8) {
       // calculate to shade for cloud cover

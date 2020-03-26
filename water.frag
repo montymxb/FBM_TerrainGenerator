@@ -177,9 +177,11 @@ void main() {
 
   vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
 
-  float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed)));
+  //float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed)));
+	float f = fbm(vMCPosition.xz + fbm(vMCPosition.xz + uSlowTime + uSeed));
 
   // use clamping to mix colors, try black and white first
+	/**/
   if(f < 0.4) {
     color.rgb = mix(
         vec3(0.0, 0.0, 0.1),
@@ -189,32 +191,37 @@ void main() {
   } else if(f >= 0.4 && f < 0.5) {
     color.rgb = mix(
         vec3(0.0, 0.0, 0.9),
-        vec3(0.5, 0.5, 1.0),
+        vec3(0.0, 0.5, 1.0),
         clamp((f - 0.4) * (1.0/0.1), 0.0, 1.0)
       );
 
   } else if(f >= 0.5 && f < 0.501) {
-    // white ridge
-    color.rgb = vec3(1.0, 1.0, 1.0);
+    // white ridge (no)
+    color.rgb = vec3(0.0, 0.5, 1.0);
 
-  } else if(f >= 0.501 && f <= 0.7) {
+  } else if(f >= 0.5 && f <= 0.7) {
     color.rgb = mix(
-        vec3(0.5, 0.5, 1.0),
-        vec3(0.0, 0.0, 1.0),
+        vec3(0.0, 0.5, 1.0),
+        vec3(0.0, 0.8, 1.0),
         clamp((f - 0.501) * (1.0/0.199), 0.0, 1.0)
       );
 
   } else {
     // all blue
-    color.rgb = vec3(0.0, 0.0, 1.0);
+    color.rgb = vec3(0.0, 0.8, 1.0);
 
   }
+	/**/
+
+	// good light seawater color
+	//color.rgb = vec3(0.0, 0.8, 1.0);
 
 	//
   // Also calculate cloud cover
   //
 	if(uCloudsEnabled && uShadingEnabled) {
-	  float fbmVal = fbm_shader(vST + fbm_shader(vST + fbm_shader(vST + uSlowTime + uSeed))) * 2.0;
+	  //float fbmVal = fbm_shader(vST + fbm_shader(vST + fbm_shader(vST + uSlowTime + uSeed))) * 2.0;
+		float fbmVal = fbm_shader(vMCPosition.xz + uSeed + fbm_shader(vST + uSlowTime + uSeed)) * 2.0;
 
 	  if(fbmVal > 0.8) {
 	    // calculate to shade for cloud cover
@@ -234,6 +241,6 @@ void main() {
   // calc fragment lighting with color
   color = perFragmentLighting(color);
 
-  gl_FragColor = vec4(color.rgb, 0.92);
+  gl_FragColor = vec4(color.rgb, 0.55);
 
 }

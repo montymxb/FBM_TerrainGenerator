@@ -161,7 +161,8 @@ void main() {
 
 	// pull aside S and T for noise
   // f(p) = fbm( p + fbm( p + fbm( p ) ) )
-  float ff = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSlowTime + uSeed))) * 0.2;
+  //float ff = fbm(vert.xz + fbm(vert.xz + fbm(vert.xz + uSlowTime + uSeed))) * 0.2;
+  float ff = fbm(vert.xz + uSeed + fbm(vert.xz + uSlowTime + uSeed)) * 0.2;
   vert.y += 0.2;
   vert.y -= ff;
 
