@@ -130,9 +130,16 @@ void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
 
 // returns the water 'Y' for a given point on a 2D grid
 float getWaterY(vec2 p) {
+
+	// use a sin wave to calculate waves
+	// use abs on it to make it choppy
+	float sval = (1.0 - abs(sin(uTime * 2.0 * 3.14159 + ((p.x + 0.31) * (p.y+0.89) * 11.429)))) * 0.01;
+
+	// add noise to perturb the waves, make them look more broken up
 	float fval = fbm(p * 20.0 + uSlowTime * 5.0 + uSeed) * 0.025;
-	float sval = sin(uTime * 2.0 * 3.14159 + ((p.x + 0.31) * (p.y+0.89) * 11.429)) * 0.004;
-	return fval+sval;
+
+	// sum them up
+	return sval+fval;
 }
 
 
@@ -166,8 +173,6 @@ vec3 calcNormal(vec3 p1) {
 
 void main() {
 
-	vec4 ECPosition = gl_ModelViewMatrix * gl_Vertex;
-
 	vST = gl_MultiTexCoord0.st;
 	//vec3 vert = ECPosition.xyz;
 	vec3 vert = gl_Vertex.xyz;
@@ -184,12 +189,16 @@ void main() {
 	vert.y = oldY;
   vert.y += (0.43 + uWaterHeight);
 
-	// setup perfragment lighting in vertex shader
-	perFragmentLighting(ECPosition, adjustedNormal);
-
 	// store model coordinates for use in frag shader
 	vMCPosition = vert.xyz;
 
-	gl_Position = gl_ModelViewProjectionMatrix * vec4(vert,1.0);
+	// calculate eye space coordinates
+	vec4 ECPosition = gl_ModelViewMatrix * vec4(vert.xyz, gl_Vertex.w);
+
+	// setup perfragment lighting in vertex shader
+	perFragmentLighting(ECPosition, adjustedNormal);
+
+	// apply projection matrix to eye coordinate space to get clip coordinates
+	gl_Position = gl_ProjectionMatrix * ECPosition;
 
 }

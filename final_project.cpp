@@ -147,18 +147,28 @@ int		DepthCueOn;				// != 0 means to use intensity depth cueing
 int		DepthBufferOn = 1;	// != 0 means to use the z-buffer
 int		DepthFightingOn;		// != 0 means to use the z-buffer
 
-
+//
 /* Final Project Components */
+//
+// Shader for the land
 GLSLProgram *LandscapePatt;
+// Shader for the water
 GLSLProgram *WaterPatt;
+// Shader for the flat cloud sheet
 GLSLProgram *SkyPatt;
+// Shader for clouds with volumetric ray casting
 GLSLProgram *SkyVolPatt;
 
+// seed used to adjust all generation in shaders
 float programSeed;
-GLuint testSheetId;
+// plain square
+GLuint plainSheetId;
+// high vertex count square
 GLuint denseSheetId;
+// cube
 GLuint boxList;
 
+// light positioning, fed into shaders for per-fragment lighting
 float LightX;
 float LightY;
 float LightZ;
@@ -166,6 +176,9 @@ float LightZ;
 //
 // Control Variables
 //
+float RayCastStepSize = 0.01;
+float CloudDensity = 0.222;
+float CloudVolumeSize = 1.0;
 int CloudOctaves = 8;
 int LandOctaves = 8;
 int WaterOctaves = 8;
@@ -252,15 +265,22 @@ int main( int argc, char *argv[ ] ) {
 	printf("f:\ttoggle freeze\n");
 	printf("1-9:\tset octaves to #\n");
 	printf("c:\ttoggle cloud 2D\n");
-	printf("h:\t center light source in middle of scene\n");
+	printf("h:\tcenter light source in middle of scene\n");
+	printf("r:\tgenerate new terrain seed");
 	printf("s:\ttoggle sun rotation\n");
 	printf("w:\ttoggle water\n");
 	printf("e:\ttoggle land\n");
-	printf("m:\ttoggle cloud volume\n");
+	printf("v:\ttoggle cloud volume\n");
 	printf("d:\ttoggle cloud shadows\n");
 	printf("t:\ttoggle flowing land\n");
 	printf("=:\tincrease water height\n");
 	printf("-:\tdecrease water height\n");
+	printf("\\:\tincrease cloud volume scale\n");
+	printf("]:\tdecrease cloud volume scale\n");
+	printf("\':\tincrease cloud density\n");
+	printf(";:\tdecrease cloud density\n");
+	printf("/:\tincrease raycast step-size\n");
+	printf(".:\tdecrease raycast step-size\n");
 	printf("option + click + move:\tzoom\n");
 
 	// create the display structures that will not change:
@@ -428,9 +448,9 @@ void generateBox() {
 
 
 // simple test sheet
-void generateSimpleTestSheet() {
-	testSheetId = glGenLists(1);
-	glNewList(testSheetId, GL_COMPILE);
+void generatePlainSheet() {
+	plainSheetId = glGenLists(1);
+	glNewList(plainSheetId, GL_COMPILE);
 
 	glBegin(GL_TRIANGLE_STRIP);
 
@@ -577,16 +597,34 @@ void drawCloudVolume() {
 	SkyVolPatt->SetUniformVariable("LightZ", LightZ);
 	SkyVolPatt->SetUniformVariable("SpecularColor", 1.0f, 1.0f, 1.0f);
 	SkyVolPatt->SetUniformVariable("uOctaves", CloudOctaves);
-	SkyVolPatt->SetUniformVariable("uVolumeStart", -0.5f, -0.5f, -0.5f);
+	SkyVolPatt->SetUniformVariable("uVolumeStart", 0.0f, -0.5f, 0.0f);
 	SkyVolPatt->SetUniformVariable("uVolumeDimens", 1.0f, 1.0f, 1.0f);
-	SkyVolPatt->SetUniformVariable("uEyeAt", 1.0, 1.0, 1.0);
+	SkyVolPatt->SetUniformVariable("uCloudDensity", CloudDensity);
+	SkyVolPatt->SetUniformVariable("uRayCastStepSize", RayCastStepSize);
 
+
+	//
+	// Cube Volume
+	//
+	/**/
 	glPushMatrix();
 	//glRotatef(360.0 * LongTime, 1.0, 0.0, 0.0);
-	//glScalef(1.0, 1.0, 1.0);
-	glTranslatef(0.0,0.5,0.0);
+	glScalef(1.0, 1.0 * CloudVolumeSize, 1.0);
+	glTranslatef(-0.5,0.5,-0.5);
 	glCallList(boxList);
 	glPopMatrix();
+	/**/
+
+	//
+	// Sheet with faked volume
+	//
+	/*
+	glPushMatrix();
+	glScalef(1.0, 1.0 * CloudVolumeSize, 1.0);
+	glTranslatef(-0.5,0.5,-0.5);
+	glCallList(plainSheetId);
+	glPopMatrix();
+	/**/
 
 	// no patt
 	SkyVolPatt->Use(0);
@@ -665,7 +703,7 @@ void drawClouds() {
 void drawSun() {
 	glPushMatrix();
 	glTranslatef(LightX, LightY, LightZ);
-	glCallList(testSheetId);
+	glCallList(plainSheetId);
 	glPopMatrix();
 }
 
@@ -1166,7 +1204,7 @@ void InitLists() {
 	// generate the test sheet lists
 	generateBox();
 	generateDenseSheet();
-	generateSimpleTestSheet();
+	generatePlainSheet();
 
 }
 
@@ -1207,6 +1245,8 @@ Keyboard( unsigned char c, int x, int y )
             glutIdleFunc( Animate );
         break;
 
+
+		// 1-9 are land, cloud, and water octaves
 		case '1':
 			LandOctaves = 1;
 			CloudOctaves = 1;
@@ -1262,38 +1302,47 @@ Keyboard( unsigned char c, int x, int y )
 			break;
 
 		case 'c':
+			// enable a flat sheet of clouds
 			EnableClouds = EnableClouds ? false : true;
 			break;
 
 		case 's':
+			// enable the sun rotation
 			EnableSunRotation = EnableSunRotation ? false : true;
 			printf("Time: %d\n", LongLongTime);
 			break;
 
 		case 'w':
+			// enable water
 			EnableWater = EnableWater ? false : true;
 			break;
 
 		case 'e':
+			// enable land
 			EnableLand = EnableLand ? false : true;
 			break;
 
-		case 'm':
+		case 'v':
+			// enable the cloud volume rendering
 			EnableCloudVolume = EnableCloudVolume ? false : true;
 
 		case 'd':
+			// enable clouds to cast shade on land & water
 			EnableShading = EnableShading ? false : true;
 			break;
 
 		case 't':
+			// enble fluid flow of the land
 			EnableFluidLand = EnableFluidLand ? false : true;
 			break;
 
 		case '=':
+			// increase water height
 			WaterHeight+=0.01f;
 			break;
 
 		case '-':
+			// decrease water height
 			WaterHeight-=0.01f;
 			break;
 
@@ -1302,6 +1351,41 @@ Keyboard( unsigned char c, int x, int y )
 			LightX = 0.0f;
 			LightY = 0.0f;
 			LightZ = 0.0f;
+			break;
+
+		case 'r':
+			// generate new seed
+			programSeed = (rand() % 1000000 + 1) / 100000;
+			break;
+
+		case '\\':
+			// adjust cloud volume size up
+			CloudVolumeSize+=0.1;
+			break;
+
+		case ']':
+			// adjust cloud volume size down
+			CloudVolumeSize-=0.1;
+			break;
+
+		case ';':
+			// adjust cloud density down
+			CloudDensity-=0.01;
+			break;
+
+		case '\'':
+			// adjust cloud density up
+			CloudDensity+=0.01;
+			break;
+
+		case '.':
+			RayCastStepSize-=0.001;
+			printf("raycast step-size--: %f\n", RayCastStepSize);
+			break;
+
+		case '/':
+			RayCastStepSize+=0.001;
+			printf("raycast step-size++: %f\n", RayCastStepSize);
 			break;
 
 		default:

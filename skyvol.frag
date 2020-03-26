@@ -14,7 +14,6 @@ uniform float	uTime;
 varying vec2 vST;		// texture coords
 varying vec3 vMCPosition; // model coords
 varying vec4 vECPosition; // eye coords (camera coordinates)
-varying vec3 vGLPosition; // use gl_Position
 
 // shaded normal, light, eye vectors
 varying vec3 Ns;
@@ -27,21 +26,21 @@ uniform float Shininess;
 
 uniform int uOctaves;
 
-// eye space coordinates of the beginning of this volume
-varying vec3 vESVolumeStart;
-
 // start & dimensions of this volume, adjusted to eye space
-varying vec3 vVolumeStart;
-varying vec3 vVolumeDimens;
+uniform vec3 uVolumeStart;
+uniform vec3 uVolumeDimens;
 
 // inverse of model view matrix
 varying mat4 vModelViewMatrix_Inverse;
 
-// eye position
-uniform vec3 uEyeAt;
-
 // eye coordinate lights
 varying vec3 vECLight;
+
+// density of clouds
+uniform float uCloudDensity;
+
+// size multiplier for ray cast steps to use
+uniform float uRayCastStepSize;
 
 
 // from S.O., what does dot() do? (dot product, yes), and fract() (fraction, yes)
@@ -229,24 +228,24 @@ vec4 perFragmentLighting(vec4 color) {
 }
 
 
+// determine that this point lies above and below the x,y,z positions that define this shape
 // is within the volume
 bool isWithinVolume(vec3 p) {
-	// determine that this point lies above and below the x,y,z positions that define this shape
-	/**/
 	return (
 		// within x coordinate
-		p.x >= vVolumeStart.x && p.x <= (vVolumeStart.x + vVolumeDimens.x) &&
+		p.x >= uVolumeStart.x && p.x <= (uVolumeStart.x + uVolumeDimens.x) &&
 		// within y coordinate
-		p.y >= vVolumeStart.y && p.y <= (vVolumeStart.y + vVolumeDimens.y) &&
+		p.y >= uVolumeStart.y && p.y <= (uVolumeStart.y + uVolumeDimens.y) &&
 		// within z coordinate
-		p.z >= vVolumeStart.z && p.z <= (vVolumeStart.z + vVolumeDimens.z)
+		p.z >= uVolumeStart.z && p.z <= (uVolumeStart.z + uVolumeDimens.z)
 	);
-	/**/
-	//return true;
 
 }
 
 
+// TODO, this method is unused, wasn't the right direction and doesn't work with the current inputs vals
+// but left for reference
+//
 // Fixed probe, the data being viewed is fixed within the volume in model coordinates
 // This can be changed by rotations and such, but only on the object itself
 // gets the color using a ray cast, without a definite volume boundary
@@ -344,19 +343,21 @@ void getColor_ByRayCast_NoBound_UsingModelCoordinates() {
 
 
 
-// World Coordinate Probe, useful for scouring data across large sections of space potentially
-// gets the color using a ray cast, without a definite volume boundary
-// for eye coordinates (camera based, makes this a probe)
+// Current Approach
+//
+// Gets the color for a fragment by performing a ray cast
+// based on eye coordinates, and then converting back to model coordinates
+// in order to preserve locality of values obtained
 void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	// changes the ray step size
 	// 0.025, 0.0125
-	float rayStepSizeMultiplier = 0.01;
+	float rayStepSizeMultiplier = uRayCastStepSize;
 	// max # of steps that are allowed before stopping the ray cast
-	int maxSteps = 200;
+	int maxSteps = 50; // 200
 
-	// default is no color
-	vec4 color = vec4(0.0);
+	// default is no color (testing with slight coloring to track it)
+	vec4 color = vec4(0.3);
 
 	// calculate small ray that steps through at fixed increments
 	vec3 rayStep = (normalize(vECPosition) * rayStepSizeMultiplier).xyz;
@@ -366,6 +367,9 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	// counts ray cast steps, used to exit out
 	int steps = 0;
+
+	// time and seed adjustment
+	float timeAndSeed = (uSlowTime * 0.5) + uSeed;
 
 	// convert point to model coordinates before we start
 	vec4 convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
@@ -395,7 +399,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 		/**/
 		// get fractal brownian motion val
-		float f = fbm(convertedPoint.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
+		float f = fbm(convertedPoint.xyz + timeAndSeed) * 2.0;
 		//float f = fbm(convertedPoint.xyz + fbm(convertedPoint.xyz + fbm(convertedPoint.xyz + uSlowTime * 0.5 + uSeed))) * 2.0;
 		// only apply if greater than 0.8
 		if(f > 0.8) {
@@ -405,7 +409,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 				vec4(1.0),
 				(f - 0.8)
 			);
-			tColor *= 0.222;
+			tColor *= uCloudDensity;
 			color += tColor;
 
 		}
@@ -459,10 +463,12 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	// color red if we are exceeding the ray length
 	// this is a debug feature
+	/*
 	if(steps > maxSteps) {
 		color = vec4(1.0, 0.0, 0.0, 1.0);
 
 	}
+	*/
 
 
 	if(color.a == 0.0) {
@@ -484,6 +490,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	rayCastPos.xyz += vRL;
 	convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 	steps = 0;
+
 	while(isWithinVolume(convertedPoint.xyz)) {
 		if(lightAlpha >= 1.0) {
 			break;
@@ -494,13 +501,13 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 		}
 
 		// sum up the alphas using the same equation as above
-		float g = fbm(convertedPoint.xyz + (uSlowTime * 0.5) + uSeed) * 2.0;
+		float g = fbm(convertedPoint.xyz + timeAndSeed) * 2.0;
 		if(g > 0.8) {
 			float tAlpha = mix(
 				0.0,
 				1.0,
 				(g - 0.8)
-			) * 0.222;
+			) * uCloudDensity;
 			lightAlpha += tAlpha;
 		}
 

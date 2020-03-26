@@ -13,7 +13,6 @@
  varying vec2 vST;		// texture coords
  varying vec3 vMCPosition; // model coords
  varying vec4 vECPosition; // eye coordinates
- varying vec3 vGLPosition; // use gl_Position
 
  // shaded normal, light, eye vectors
  varying vec3 Ns;
@@ -29,14 +28,6 @@
  varying vec3 vECLight;
 
  uniform int uOctaves;
-
- // start of the volume
- uniform vec3 uVolumeStart;
- uniform vec3 uVolumeDimens;
- varying vec3 vESVolumeStart;
-
- varying vec3 vVolumeStart;
- varying vec3 vVolumeDimens;
 
  // inverse of model view matrix
  varying mat4 vModelViewMatrix_Inverse;
@@ -154,10 +145,10 @@
 
  	// slightly shift p2's x up and calc new y
  	p2.x += 0.0001;
-   p2.y += fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSlowTime + uSeed))) * 0.05;
+  p2.y += fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSlowTime + uSeed))) * 0.05;
  	// slightly shift p3's z up and calc new y
  	p3.z += 0.0001;
-   p3.y += fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSlowTime + uSeed))) * 0.05;
+  p3.y += fbm(p3.xz + fbm(p3.xz + fbm(p3.xz + uSlowTime + uSeed))) * 0.05;
 
  	// calculate cross of vector(p1,p2) and vector(p1,p3)
  	vec3 v1 = p1 - p2;
@@ -244,16 +235,14 @@ void main() {
   // returns coordinates in Eye Space, making camera at <0,0,0>
   vec4 ECPosition = gl_ModelViewMatrix * gl_Vertex;
 
-  // calculate initial point shifted into eye coordinates
-  vVolumeStart = uVolumeStart;
-  vVolumeDimens = uVolumeDimens;
-
 	vST = gl_MultiTexCoord0.st;
 	//vec3 vert = ECPosition.xyz;
 	vec3 vert = gl_Vertex.xyz;
 
-	vec3 adjustedNormal = calcNormal(vert, 1.0);
-  //vec3 adjustedNormal = gl_Normal;
+  // TODO, ignores the normal here, recalculates based on ray cast results in fragment shader
+  // uses Es and Ls, but ignores Ns, so we will pass gl_Normal to quickly set the other 2 up here
+	//vec3 adjustedNormal = calcNormal(vert, 1.0);
+  vec3 adjustedNormal = gl_Normal;
 
 	// setup perfragment lighting in vertex shader
   // ECPosition.xyz - vert;
@@ -263,8 +252,6 @@ void main() {
   vMCPosition = vert.xyz;
   // store eye coordinates for use in frag shader
   vECPosition = ECPosition;
-  // store gl position
-  vGLPosition = (gl_ModelViewProjectionMatrix * vec4(vert,1.0)).xyz;
 
   // convert light to eye coordinates to use in the next stage
   vECLight = (gl_ModelViewMatrix * vec4(LightX, LightY, LightZ, 1.0)).xyz;
@@ -272,9 +259,6 @@ void main() {
   // calculate invers of model view matrix
   vModelViewMatrix_Inverse = inverse(gl_ModelViewMatrix);
 
-  // calculate new eye space volume start
-  vESVolumeStart = (gl_ModelViewMatrix * vec4(uVolumeStart.xyz,1.0)).xyz;
-
-	gl_Position = gl_ModelViewProjectionMatrix * vec4(vert,1.0);
+  gl_Position = gl_ProjectionMatrix * ECPosition;
 
 }

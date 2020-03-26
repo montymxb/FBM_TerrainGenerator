@@ -158,7 +158,6 @@
   - add in vertex displacement via
     - better sin wave
     - and fpm
-    - look for chop
     - looks pretty decent with just lighting, and no color
   - now setup with color
 - water is far too shiny, reduce either:
@@ -166,11 +165,38 @@
   - specular highlight factor
   - water looks much better now
 - finally, can the land be subtly improved texture wise?
-  - yes, by increasing the sheet density (100+ looks okay, 200+ looks great, 400+ looks extrememly good, but lags crazily)
+  - yes, by increasing the sheet density (100+ looks okay, 200+ looks great, 400+ looks extremely good, but lags crazily)
+- improve water quality by using sharper noise (inverse of abs of sin/cos wave)
+  - adds chop, looks good
+- clouds should be thinner, thick blocks are rare, adjust accordingly
+  - add control var for cloud block height
+    - bug with reducing height, produces empty block at the top of the screen for some reason?
+    - ignored this
+  - add control var for cloud density
+    - somewhat okay
+- update help commands to include new commands for scaling cloud stuff
 
-- consider reducing water effects to only be in fragment shader (unneeded to compute via vertex shader, except to adjust normal)
+- improve cloud performance, allow altering ray casting steps
+    - something is slowing down cloud rendering like crazy (might be hash function?)
+      - experiment with trying to improve performance by cutting off parts of the computation, and seeing how it performs after
+      - playing around with single sheet
+      - playing around decreased max (expensive anyways...grrr)
+      - weird sheet artifact observed?
+        - try setting default sheet color, remove discard, is it longer than we're seeing????
+
+- land improvements that I was thinking of last night...
+  - some smoother or sharper looking terrain? not sure...
+
+> consider reducing water effects to only be in fragment shader (unneeded to compute via vertex shader, except to adjust normal)
   - with respect to x & z still, so it doesn't get weird...
   - worry about it tomorrow
+  - ehh maybe not, s & t will scale, and that could produce weird effects (maybe???)
+  - no, try it out without reducing to the tile type first, then change the tile type after
+  - same for clouds as well
+
+- can we use cool looking clouds with cloud sheet? I.e, 'fake' a volume by searching into the depth of the current one?
+
+- upload new pictures, gifs of water, clouds, cloud volume, then all together
 
 # references
 - https://thebookofshaders.com/13/

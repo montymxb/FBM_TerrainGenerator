@@ -1,3 +1,5 @@
 
-ERROR: 0:134: '11.429' : syntax error: syntax error
+ERROR: 0:503: Use of undeclared identifier 'g'
+ERROR: 0:507: Use of undeclared identifier 'g'
+ERROR: 0:509: Use of undeclared identifier 'tAlpha'
 
