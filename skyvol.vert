@@ -236,6 +236,7 @@ void main() {
   vec4 ECPosition = gl_ModelViewMatrix * gl_Vertex;
 
 	vST = gl_MultiTexCoord0.st;
+
 	//vec3 vert = ECPosition.xyz;
 	vec3 vert = gl_Vertex.xyz;
 

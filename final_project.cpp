@@ -173,10 +173,13 @@ float LightX;
 float LightY;
 float LightZ;
 
+// texture id for noise
+GLuint noiseTextureId;
+
 //
 // Control Variables
 //
-float RayCastStepSize = 0.01;
+float RayCastStepSize = 0.025; // 0.01
 float CloudDensity = 0.222;
 float CloudVolumeSize = 1.0;
 int CloudOctaves = 8;
@@ -185,11 +188,12 @@ int WaterOctaves = 8;
 float WaterHeight = 0.0f;
 bool EnableClouds = false;
 bool EnableSunRotation = false;
-bool EnableCloudVolume = false;
-bool EnableLand = true;
+bool EnableCloudVolume = true;
+bool EnableLand = false;
 bool EnableWater = false;
 bool EnableShading = false;
 bool EnableFluidLand = false;
+bool RayCastIgnoreBounds = false;
 //
 //
 //
@@ -236,6 +240,8 @@ void	Visibility( int );
 void	Axes( float );
 void	HsvRgb( float[3], float [3] );
 
+void loadNoiseTexture();
+
 // main program:
 
 int main( int argc, char *argv[ ] ) {
@@ -266,7 +272,8 @@ int main( int argc, char *argv[ ] ) {
 	printf("1-9:\tset octaves to #\n");
 	printf("c:\ttoggle cloud 2D\n");
 	printf("h:\tcenter light source in middle of scene\n");
-	printf("r:\tgenerate new terrain seed");
+	printf("r:\tgenerate new terrain seed\n");
+	printf("i:\ttoggle bound check on ray casting (acts like a window when off)\n");
 	printf("s:\ttoggle sun rotation\n");
 	printf("w:\ttoggle water\n");
 	printf("e:\ttoggle land\n");
@@ -369,78 +376,78 @@ void generateBox() {
 	glBegin(GL_POLYGON);
 	glNormal3f(0.0,0.0,-1.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f(  0.5, -0.5, -0.5 );
+	glVertex3f(  1.0, -0.5, 0.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f(  0.5,  0.5, -0.5 );
+	glVertex3f(  1.0,  0.5, 0.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( -0.5,  0.5, -0.5 );
+	glVertex3f( 0.0,  0.5, 0.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( -0.5, -0.5, -0.5 );
+	glVertex3f( 0.0, -0.5, 0.0);
 	glEnd();
 
 	// top
 	glBegin(GL_POLYGON);
 	glNormal3f(0.0,0.0,1.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f(  0.5, -0.5, 0.5 );
+	glVertex3f(  1.0, -0.5, 1.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f(  0.5,  0.5, 0.5 );
+	glVertex3f(  1.0,  0.5, 1.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( -0.5,  0.5, 0.5 );
+	glVertex3f( 0.0,  0.5, 1.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( -0.5, -0.5, 0.5 );
+	glVertex3f( 0.0, -0.5, 1.0);
 	glEnd();
 
 	// right
 	glBegin(GL_POLYGON);
 	glNormal3f(1.0,0.0,0.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f( 0.5, -0.5, -0.5 );
+	glVertex3f(1.0, -0.5, 0.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f( 0.5,  0.5, -0.5 );
+	glVertex3f(1.0,  0.5, 0.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( 0.5,  0.5,  0.5 );
+	glVertex3f(1.0,  0.5,  1.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( 0.5, -0.5,  0.5 );
+	glVertex3f(1.0, -0.5,  1.0);
 	glEnd();
 
 	// left
 	glBegin(GL_POLYGON);
 	glNormal3f(-1.0,0.0,1.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f( -0.5, -0.5,  0.5 );
+	glVertex3f(0.0, -0.5,  1.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f( -0.5,  0.5,  0.5 );
+	glVertex3f(0.0,  0.5,  1.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( -0.5,  0.5, -0.5 );
+	glVertex3f(0.0,  0.5, 0.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( -0.5, -0.5, -0.5 );
+	glVertex3f(0.0, -0.5, 0.0);
 	glEnd();
 
 	// front
 	glBegin(GL_POLYGON);
 	glNormal3f(0.0,1.0,0.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f(  0.5,  0.5,  0.5 );
+	glVertex3f(1.0,  0.5,  1.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f(  0.5,  0.5, -0.5 );
+	glVertex3f(1.0,  0.5, 0.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( -0.5,  0.5, -0.5 );
+	glVertex3f(0.0,  0.5, 0.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( -0.5,  0.5,  0.5 );
+	glVertex3f(0.0,  0.5,  1.0);
 	glEnd();
 
 	// back
 	glBegin(GL_POLYGON);
 	glNormal3f(0.0,-1.0,0.0);
 	glTexCoord2f(0.0, 0.0);
-	glVertex3f(  0.5, -0.5, -0.5 );
+	glVertex3f(1.0, -0.5, 0.0);
 	glTexCoord2f(1.0, 0.0);
-	glVertex3f(  0.5, -0.5,  0.5 );
+	glVertex3f(1.0, -0.5, 1.0);
 	glTexCoord2f(1.0, 1.0);
-	glVertex3f( -0.5, -0.5,  0.5 );
+	glVertex3f(0.0, -0.5, 1.0);
 	glTexCoord2f(0.0, 1.0);
-	glVertex3f( -0.5, -0.5, -0.5 );
+	glVertex3f(0.0, -0.5, 0.0);
 	glEnd();
 
 	glEndList();
@@ -449,6 +456,7 @@ void generateBox() {
 
 // simple test sheet
 void generatePlainSheet() {
+
 	plainSheetId = glGenLists(1);
 	glNewList(plainSheetId, GL_COMPILE);
 
@@ -577,9 +585,49 @@ void drawLandscape() {
 
 }
 
+// for texture work
+#include "bmptotexture.cpp"
+
+// loads up the A3 texture
+void loadNoiseTexture() {
+    //
+    // Texture stuff
+    //
+    // read a texture
+    int width,height;
+    unsigned char *txtId = BmpToTexture("rng.bmp", &width, &height);
+
+    // set the texture up
+    int lvl = 0;
+    int ncomps = 3; // 4 for RGBA
+    int border = 0; // width of texture border
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glGenTextures(1, &noiseTextureId);
+    glBindTexture(GL_TEXTURE_2D, noiseTextureId);
+
+    // set texture wrapping param
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); //GL_CLAMP
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); //GL_CLAMP
+
+    // set filtering (not using GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    // set texture environment (...GL_MODULATE / GL_REPLACE)
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+    glTexImage2D(GL_TEXTURE_2D, lvl, ncomps, width, height, border, GL_RGB, GL_UNSIGNED_BYTE, txtId);
+
+}
+
 
 // draws a cloud volume
 void drawCloudVolume() {
+
+	// enable for all other modes
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, noiseTextureId);
+
 	// use the landscape patt
 	SkyVolPatt->Use();
 	// used to seed fbm distribution
@@ -597,10 +645,12 @@ void drawCloudVolume() {
 	SkyVolPatt->SetUniformVariable("LightZ", LightZ);
 	SkyVolPatt->SetUniformVariable("SpecularColor", 1.0f, 1.0f, 1.0f);
 	SkyVolPatt->SetUniformVariable("uOctaves", CloudOctaves);
-	SkyVolPatt->SetUniformVariable("uVolumeStart", 0.0f, -0.5f, 0.0f);
-	SkyVolPatt->SetUniformVariable("uVolumeDimens", 1.0f, 1.0f, 1.0f);
+	SkyVolPatt->SetUniformVariable("uVolumeStart", 0.0f, -0.5f, 0.0f); // 0.0, -0.5, 0.0
+	SkyVolPatt->SetUniformVariable("uVolumeDimens", 1.0f, 1.0f, 1.0f); // 1.0, 1.0, 1.0
 	SkyVolPatt->SetUniformVariable("uCloudDensity", CloudDensity);
 	SkyVolPatt->SetUniformVariable("uRayCastStepSize", RayCastStepSize);
+	SkyVolPatt->SetUniformVariable("uIgnoreBounds", RayCastIgnoreBounds);
+	SkyVolPatt->SetUniformVariable("uNoiseTexture", 0);
 
 
 	//
@@ -658,7 +708,7 @@ void drawWater() {
 
 	glPushMatrix();
 	//glRotatef(-90.0, 1.0, 0.0, 0.0);
-	glScalef(1.0/2.0, 1.0, 1.0);
+	glScalef(0.5, 1.0, 1.0);
 	//glTranslatef(0,0.05,0.0);
 	glCallList(denseSheetId);
 	glPopMatrix();
@@ -1201,6 +1251,9 @@ void InitLists() {
   glLineWidth( 1. );
   glEndList( );
 
+	// load up our noise texture
+	loadNoiseTexture();
+
 	// generate the test sheet lists
 	generateBox();
 	generateDenseSheet();
@@ -1371,10 +1424,12 @@ Keyboard( unsigned char c, int x, int y )
 		case ';':
 			// adjust cloud density down
 			CloudDensity-=0.01;
+			printf("cloud density--: %f\n", CloudDensity);
 			break;
 
 		case '\'':
 			// adjust cloud density up
+			printf("cloud density++: %f\n", CloudDensity);
 			CloudDensity+=0.01;
 			break;
 
@@ -1386,6 +1441,12 @@ Keyboard( unsigned char c, int x, int y )
 		case '/':
 			RayCastStepSize+=0.001;
 			printf("raycast step-size++: %f\n", RayCastStepSize);
+			break;
+
+		case 'i':
+			// toggle respecting/ignoring volume bounds in ray casting
+			// useful to create 'window' effect when bounds are ignored
+			RayCastIgnoreBounds = RayCastIgnoreBounds ? false : true;
 			break;
 
 		default:

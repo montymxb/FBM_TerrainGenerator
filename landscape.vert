@@ -129,7 +129,7 @@ void perFragmentLighting(vec4 ECPosition, vec3 adjustedNormal) {
 
 float getY(vec2 p) {
 	// fbm(p2.xz + fbm(p2.xz + fbm(p2.xz + uSeed)))
-	return fbm(p + uSeed + fbm(p + fbm(p + uSeed)));
+	return fbm(p + uSeed + fbm(p + uSeed + fbm(p + uSeed)));
 }
 
 
@@ -165,6 +165,7 @@ void main() {
 	vST = gl_MultiTexCoord0.st;
 	//vec3 vert = ECPosition.xyz;
 	vec3 vert = gl_Vertex.xyz;
+	//float oldY = vert.y;
 
 	// pull aside S and T for noise
 	vec3 adjustedNormal;
@@ -174,7 +175,8 @@ void main() {
 		adjustedNormal = calcNormal(vert, uSeed);
 
 	} else {
-		vert.y = fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + uSeed)));
+		//vert.y = fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + fbm(vert.xz + uSlowTime + uSeed)));
+		vert.y = getY(vert.xz + uSlowTime);
 		adjustedNormal = gl_Normal;
 		//adjustedNormal = calcNormal(vert, uSeed);
 
@@ -185,6 +187,9 @@ void main() {
 
 	// store model coordinates for use in frag shader
 	vMCPosition = vert.xyz;
+
+	// restore original Y, if only bump mapping is desired
+	//vert.y = oldY;
 
 	gl_Position = gl_ModelViewProjectionMatrix * vec4(vert,1.0);
 

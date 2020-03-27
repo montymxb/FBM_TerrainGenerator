@@ -178,7 +178,7 @@ void main() {
   vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
 
   //float f = fbm(vST + fbm(vST + fbm(vST + uSlowTime + uSeed)));
-	float f = fbm(vMCPosition.xz + fbm(vMCPosition.xz + uSlowTime + uSeed));
+	float f = fbm(vST + fbm(vST + uSlowTime + uSeed));
 
   // use clamping to mix colors, try black and white first
 	/**/
@@ -221,7 +221,7 @@ void main() {
   //
 	if(uCloudsEnabled && uShadingEnabled) {
 	  //float fbmVal = fbm_shader(vST + fbm_shader(vST + fbm_shader(vST + uSlowTime + uSeed))) * 2.0;
-		float fbmVal = fbm_shader(vMCPosition.xz + uSeed + fbm_shader(vST + uSlowTime + uSeed)) * 2.0;
+		float fbmVal = fbm_shader(vST + uSeed + fbm_shader(vST + uSlowTime + uSeed)) * 2.0;
 
 	  if(fbmVal > 0.8) {
 	    // calculate to shade for cloud cover

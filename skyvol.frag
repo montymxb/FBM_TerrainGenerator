@@ -42,6 +42,12 @@ uniform float uCloudDensity;
 // size multiplier for ray cast steps to use
 uniform float uRayCastStepSize;
 
+// whether to use or ignore boundaries
+uniform bool uIgnoreBounds;
+
+// noise texture to sample from
+uniform sampler2D uNoiseTexture;
+
 
 // from S.O., what does dot() do? (dot product, yes), and fract() (fraction, yes)
 // Random Poster: https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl#4275343
@@ -110,6 +116,38 @@ float noise(vec2 st) {
 }
 
 
+// pow implementation
+float pow(float base, int pow) {
+  float val = base;
+  if(pow == 0) {
+    return 1.0;
+  }
+  for(int x = 1; x < pow; x++) {
+    val*=base;
+  }
+  return val;
+}
+
+
+float weakFract(float x) {
+	int q = int(x);
+	return x;
+}
+
+
+float altHash(vec3 v) {
+	//return fract(v.x + uSeed) + fract(v.y + uSeed) + fract(v.z + uSeed);
+	float q = v.x - floor(v.x);
+	return v.x;
+}
+
+
+float gn3(vec3 v, float seed) {
+	float h = distance(v * 0.8198498492, v) * v.x * seed;
+	return (float(int(h * 10.0))/10.0) - float(int(h));
+}
+
+
 // 1D noise function
 // Based on Morgan McGuire @morgan3d
 // https://www.shadertoy.com/view/4dS3Wd
@@ -119,6 +157,7 @@ float noise3D(vec3 v) {
     vec3 f = fract(v);
 
     // calculate 8 corners of a 3D tile
+		/**/
     float a = hash3(i);
     float b = hash3(i + vec3(1.0, 0.0, 0.0));
     float c = hash3(i + vec3(0.0, 1.0, 0.0));
@@ -128,6 +167,34 @@ float noise3D(vec3 v) {
     float b2 = hash3(i + vec3(1.0, 0.0, 1.0));
     float c2 = hash3(i + vec3(0.0, 1.0, 1.0));
     float d2 = hash3(i + vec3(1.0, 1.0, 1.0));
+		/**/
+
+		// using janky alt hash
+		/*
+		float a = gn3(i,uSeed);
+    float b = gn3(i + vec3(1.0, 0.0, 0.0),uSeed);
+    float c = gn3(i + vec3(0.0, 1.0, 0.0),uSeed);
+    float d = gn3(i + vec3(1.0, 1.0, 0.0),uSeed);
+
+		float a2 = gn3(i + vec3(0.0, 0.0, 1.0),uSeed);
+    float b2 = gn3(i + vec3(1.0, 0.0, 1.0),uSeed);
+    float c2 = gn3(i + vec3(0.0, 1.0, 1.0),uSeed);
+    float d2 = gn3(i + vec3(1.0, 1.0, 1.0),uSeed);
+		/**/
+
+		// using noise texture instead
+		/*
+		float a = texture2D(uNoiseTexture, i.xz).r * 3.0;
+		float b = texture2D(uNoiseTexture, i.xz + vec2(1.0, 0.0)).r * 3.0;
+		float c = texture2D(uNoiseTexture, i.xz + vec2(0.0, 1.0)).r * 3.0;
+		float d = texture2D(uNoiseTexture, i.xz + vec2(1.0, 1.0)).r * 3.0;
+
+		float a2 = texture2D(uNoiseTexture, i.yz + vec2(1.0, 1.0)).b * 3.0;
+		float b2 = texture2D(uNoiseTexture, i.yz + vec2(2.0, 1.0)).b * 3.0;
+		float c2 = texture2D(uNoiseTexture, i.yz + vec2(1.0, 2.0)).b * 3.0;
+		float d2 = texture2D(uNoiseTexture, i.yz + vec2(2.0, 2.0)).b * 3.0;
+		/**/
+
 
 		// calculate f^2 * (3.0 - 2.0f)
     vec3 u = f * f * (3.0 - 2.0 * f);
@@ -178,19 +245,6 @@ float fbm(vec3 v) {
 
 	return value;
 
-}
-
-
-// pow implementation
-float pow(float base, int pow) {
-  float val = base;
-  if(pow == 0) {
-    return 1.0;
-  }
-  for(int x = 1; x < pow; x++) {
-    val*=base;
-  }
-  return val;
 }
 
 
@@ -354,10 +408,10 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	// 0.025, 0.0125
 	float rayStepSizeMultiplier = uRayCastStepSize;
 	// max # of steps that are allowed before stopping the ray cast
-	int maxSteps = 50; // 200
+	int maxSteps = 200; // 200
 
 	// default is no color (testing with slight coloring to track it)
-	vec4 color = vec4(0.3);
+	vec4 color = vec4(0.0);
 
 	// calculate small ray that steps through at fixed increments
 	vec3 rayStep = (normalize(vECPosition) * rayStepSizeMultiplier).xyz;
@@ -387,7 +441,7 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 
 	// isWithinVolume(rayCastPos)
 	// isWithinVolume(convertedPoint.xyz)
-	while(isWithinVolume(convertedPoint.xyz) || steps == 0) {
+	while(uIgnoreBounds || isWithinVolume(convertedPoint.xyz) || steps == 0) {
 		if(color.a >= 1.0) {
 			// color maxed out, exit
 			break;
@@ -483,15 +537,14 @@ void getColor_ByRayCast_NoBound_UsingEyeCoordinates() {
 	//vec3 v2 = (rayCastPos - rc3).xyz;
 
 	// calculate vector from final point rayCastPos to vECLight
-	// reduce to unit vector
-	// reduce to 1/10th of the unit vector
-	vec3 vRL = normalize(rayCastPos.xyz - vECLight) * rayStepSizeMultiplier;
+	// reduce to multiple of unit vector
+	vec3 vRL = normalize(vECLight - rayCastPos.xyz) * rayStepSizeMultiplier;
 	// apply fixed increments until we exit the volume
 	rayCastPos.xyz += vRL;
 	convertedPoint = vModelViewMatrix_Inverse * rayCastPos;
 	steps = 0;
 
-	while(isWithinVolume(convertedPoint.xyz)) {
+	while(uIgnoreBounds || isWithinVolume(convertedPoint.xyz)) {
 		if(lightAlpha >= 1.0) {
 			break;
 		}
@@ -545,5 +598,7 @@ void main() {
 
 	// this is the one to use
 	getColor_ByRayCast_NoBound_UsingEyeCoordinates();
+
+	//gl_FragColor = vec4(texture2D(uNoiseTexture, vECPosition.xz).rgb, 1.0);
 
 }

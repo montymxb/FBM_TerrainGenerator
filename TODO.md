@@ -183,20 +183,36 @@
       - playing around decreased max (expensive anyways...grrr)
       - weird sheet artifact observed?
         - try setting default sheet color, remove discard, is it longer than we're seeing????
-
-- land improvements that I was thinking of last night...
-  - some smoother or sharper looking terrain? not sure...
-
-> consider reducing water effects to only be in fragment shader (unneeded to compute via vertex shader, except to adjust normal)
+        - fixed, dimensions were bad
+      - additional artifact observed when changing depth with a sheet of fixed size
+        - seems to be related to initial position, change that a bit and see if I can find a spot with a small visual range
+        - fixed, -0.2, 0.2...etc
+- add 'i' to ignore boundary checking in cloud volumes
+  - doing this for 2D sheet to act a bit more like a window
+  - looks good
+- is there an alternate random for glsl??? not a good one at least
+  - there's an 'ok' one...maybe a topic to use a texture for later
+- can we use cool looking clouds with cloud sheet? I.e, 'fake' a volume by searching into the depth of the current one?
+  - yeah, this works pretty well, especially without bound checking
+- add in source texture for randomness...
+    - use last year's project
+    - use that to sample for random points, rather than the extremely slow approach I'm using currently
+    - keep the old way for reference
+    - still just as slow, no discernable difference, even though the result was lackluster
+      - sticking with hash for now, but there is definitely a way to improve the performance further
+- try playing around with bump mapping for terrain, not final, just curious
+  - effect looks as expected, good facing directly down
+- consider reducing water effects to only be in fragment shader (unneeded to compute via vertex shader, except to adjust normal)
   - with respect to x & z still, so it doesn't get weird...
-  - worry about it tomorrow
   - ehh maybe not, s & t will scale, and that could produce weird effects (maybe???)
   - no, try it out without reducing to the tile type first, then change the tile type after
-  - same for clouds as well
+    - seriously messed up the approach for waves, lost a lot of good definition, and shininess, so trashed this approach
+- land improvements that I was thinking of
+  - none at the moment to apply
 
-- can we use cool looking clouds with cloud sheet? I.e, 'fake' a volume by searching into the depth of the current one?
+> cloud lighting is off a bit, has to do with bad normals (had same problem with water but fixed it, y was wayyyy too far off)
+  - normals still need some work
 
-- upload new pictures, gifs of water, clouds, cloud volume, then all together
 
 # references
 - https://thebookofshaders.com/13/
